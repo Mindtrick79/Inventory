@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Account Requests</h2>
+<p>Admin-only view of pending account requests submitted via the Request Account form.</p>
+
+{% if requests %}
+<table>
+  <thead>
+    <tr>
+      <th>Full Name</th>
+      <th>Email</th>
+      <th>Desired Username</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in requests %}
+    <tr>
+      <td>{{ r.full_name or '' }}</td>
+      <td>{{ r.email }}</td>
+      <td>{{ r.desired_username }}</td>
+      <td>{{ r.notes }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No account requests found.</p>
+{% endif %}
+
+<p>
+  You can create users and assign roles on the <a href="{{ url_for('manage_users') }}">Users</a> page.
+</p>
+{% endblock %}

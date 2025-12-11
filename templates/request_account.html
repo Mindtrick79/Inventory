@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Request an Account</h2>
+<p>Fill out this form to request a login for Roberts Inventory Manager. An admin will review and create your account.</p>
+
+<form method="post">
+  <div>
+    <label for="full_name">Full Name</label>
+    <input type="text" id="full_name" name="full_name">
+  </div>
+  <div>
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" required>
+  </div>
+  <div>
+    <label for="desired_username">Desired Username</label>
+    <input type="text" id="desired_username" name="desired_username" required>
+  </div>
+  <div>
+    <label for="notes">Notes (optional)</label>
+    <textarea id="notes" name="notes" rows="3" placeholder="e.g. Role requested, department, etc."></textarea>
+  </div>
+  <div>
+    <button type="submit">Submit Request</button>
+    <a href="{{ url_for('login') }}">Back to Login</a>
+  </div>
+</form>
+{% endblock %}

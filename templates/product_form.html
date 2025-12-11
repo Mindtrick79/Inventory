@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Add Product</h2>
+<form method="post">
+  <div>
+    <label for="product_name">Product Name</label>
+    <input type="text" id="product_name" name="product_name" required>
+  </div>
+
+  <div>
+    <label for="category">Category</label>
+    <input type="text" id="category" name="category">
+  </div>
+
+  <div>
+    <label for="quantity_on_hand">Quantity on Hand</label>
+    <input type="number" step="1" min="0" id="quantity_on_hand" name="quantity_on_hand" required>
+  </div>
+
+  <div>
+    <label for="container_unit">Container Unit</label>
+    <select id="container_unit" name="container_unit">
+      <option value="">-- Select unit --</option>
+      {% for u in container_units %}
+        <option value="{{ u }}">{{ u }}</option>
+      {% endfor %}
+      <option value="__other__">Other...</option>
+    </select>
+    <input type="text" id="container_unit_other" name="container_unit_other" placeholder="Enter unit" style="display:none; margin-left:0.5rem;">
+  </div>
+
+  <div>
+    <label for="reorder_threshold">Reorder Threshold</label>
+    <input type="number" step="1" min="0" id="reorder_threshold" name="reorder_threshold">
+  </div>
+
+  <div>
+    <label for="reorder_amount">Reorder Amount</label>
+    <input type="number" step="1" min="0" id="reorder_amount" name="reorder_amount">
+  </div>
+
+  <div>
+    <label for="reorder_quantity">Reorder Quantity (label)</label>
+    <select id="reorder_quantity" name="reorder_quantity">
+      <option value="">-- Select label --</option>
+      {% for lbl in reorder_labels %}
+        <option value="{{ lbl }}">{{ lbl }}</option>
+      {% endfor %}
+      <option value="__other__">Other...</option>
+    </select>
+    <input type="text" id="reorder_quantity_other" name="reorder_quantity_other" placeholder="Enter label" style="display:none; margin-left:0.5rem;">
+  </div>
+
+  <div>
+    <label for="distributor">Distributor</label>
+    <select id="distributor" name="distributor">
+      <option value="">-- Select distributor --</option>
+      {% for d in distributors %}
+        <option value="{{ d }}">{{ d }}</option>
+      {% endfor %}
+      <option value="__other__">Other...</option>
+    </select>
+    <input type="text" id="distributor_other" name="distributor_other" placeholder="Enter distributor" style="display:none; margin-left:0.5rem;">
+  </div>
+
+  <div>
+    <label for="location">Location</label>
+    <input type="text" id="location" name="location" placeholder="Shop, Truck 1, etc.">
+    <label for="cost_per_unit">Cost Per Unit</label>
+    <input type="text" id="cost_per_unit" name="cost_per_unit" placeholder="e.g. 12.50">
+  </div>
+
+  <div>
+    <button type="submit">Save</button>
+    <a href="{{ url_for('products') }}">Cancel</a>
+  </div>
+</form>
+<script>
+  function toggleOther(selectId, otherInputId) {
+    var sel = document.getElementById(selectId);
+    var other = document.getElementById(otherInputId);
+    if (!sel || !other) return;
+    if (sel.value === "__other__") {
+      other.style.display = "inline-block";
+      other.focus();
+    } else {
+      other.style.display = "none";
+      other.value = "";
+    }
+  }
+
+  document.getElementById('container_unit').addEventListener('change', function() {
+    toggleOther('container_unit', 'container_unit_other');
+  });
+  document.getElementById('reorder_quantity').addEventListener('change', function() {
+    toggleOther('reorder_quantity', 'reorder_quantity_other');
+  });
+  document.getElementById('distributor').addEventListener('change', function() {
+    toggleOther('distributor', 'distributor_other');
+  });
+</script>
+{% endblock %}

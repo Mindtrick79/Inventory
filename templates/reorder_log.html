@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reorder Log</h2>
+{% if not log_rows %}
+  <p>No reorder history yet.</p>
+{% else %}
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>User</th>
+        <th>IP</th>
+        <th>Vendor</th>
+        <th>Items</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th>Approved Timestamp</th>
+        <th>Approved By</th>
+        <th>Approved IP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in log_rows %}
+      <tr>
+        <td>{{ row['Timestamp'] }}</td>
+        <td>{{ row['User'] }}</td>
+        <td>{{ row['IP'] }}</td>
+        <td>{{ row['Vendor'] }}</td>
+        <td>{{ row['Items'] }}</td>
+        <td>
+          {% if row['Status'] %}
+            <span class="status-badge status-{{ row['Status'] }}">{{ row['Status'] }}</span>
+          {% else %}
+            
+          {% endif %}
+        </td>
+        <td>{{ row['Notes'] }}</td>
+        <td>{{ row['Approved Timestamp'] }}</td>
+        <td>{{ row['Approved By'] }}</td>
+        <td>{{ row['Approved IP'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+{% endblock %}

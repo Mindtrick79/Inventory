@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Approvals</h2>
+<p>Pending reorder approvals.</p>
+
+{% if not pending %}
+  <p>No pending reorder requests.</p>
+{% else %}
+  <form method="post">
+    <div>
+      <label for="user">Your Name (approver)</label>
+      <input type="text" id="user" name="user" placeholder="Approver name">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Vendor</th>
+          <th>User</th>
+          <th>IP</th>
+          <th>Items</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in pending %}
+        <tr>
+          <td>{{ row['Timestamp'] }}</td>
+          <td>{{ row['Vendor'] }}</td>
+          <td>{{ row['User'] }}</td>
+          <td>{{ row['IP'] }}</td>
+          <td>{{ row['Items'] }}</td>
+          <td>{{ row['Status'] }}</td>
+          <td>
+            <button type="submit" name="action" value="APPROVE" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" onclick="this.form.timestamp.value='{{ row['Timestamp'] }}'; this.form.vendor.value='{{ row['Vendor'] }}';">Approve</button>
+            <button type="submit" name="action" value="REJECT" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" onclick="this.form.timestamp.value='{{ row['Timestamp'] }}'; this.form.vendor.value='{{ row['Vendor'] }}';">Reject</button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <input type="hidden" name="timestamp" value="">
+    <input type="hidden" name="vendor" value="">
+  </form>
+{% endif %}
+{% endblock %}

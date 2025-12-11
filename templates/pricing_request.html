@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Pricing Request</h2>
+
+<p>Send a vendor a list of products you use so they can reply with updated pricing.</p>
+
+<form method="get" class="vendor-select-form">
+  <label for="vendor">Vendor</label>
+  <select id="vendor" name="vendor" onchange="this.form.submit()">
+    <option value="">-- Select a vendor --</option>
+    {% for v in vendors %}
+      {% set name = v['Vendor Name'] %}
+      <option value="{{ name }}" {% if selected_vendor == name %}selected{% endif %}>{{ name }}</option>
+    {% endfor %}
+  </select>
+  <noscript>
+    <button type="submit">Load Products</button>
+  </noscript>
+</form>
+
+{% if selected_vendor %}
+  <h3>Products from {{ selected_vendor }}</h3>
+  {% if products %}
+  <form method="post" class="pricing-request-form">
+    <input type="hidden" name="vendor" value="{{ selected_vendor }}">
+
+    <table>
+      <thead>
+        <tr>
+          <th>Select</th>
+          <th>Product Name</th>
+          <th>Container Unit</th>
+          <th>Reorder Quantity</th>
+          <th>Cost Per Unit</th>
+          <th>Location</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>
+            <input type="checkbox" name="products" value="{{ p['Product Name'] }}">
+          </td>
+          <td>{{ p['Product Name'] }}</td>
+          <td>{{ p['Container Unit'] }}</td>
+          <td>{{ p['Reorder Quantity'] }}</td>
+          <td>{{ p['Cost Per Unit'] }}</td>
+          <td>{{ p['Location'] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div>
+      <label for="notes">Notes to vendor (optional)</label>
+      <textarea id="notes" name="notes" rows="3" placeholder="e.g. Please provide your latest pricing for these items."></textarea>
+    </div>
+
+    <div>
+      <label for="extra_cc">Additional CC emails (comma-separated, optional)</label>
+      <input type="text" id="extra_cc" name="extra_cc" placeholder="boss@example.com, office@example.com">
+    </div>
+
+    <div>
+      <button type="submit">Send Pricing Request Email</button>
+    </div>
+  </form>
+  {% else %}
+    <p>No products found for this vendor.</p>
+  {% endif %}
+{% endif %}
+
+{% endblock %}

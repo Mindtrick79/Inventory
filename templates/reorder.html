@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reorder</h2>
+{% if not grouped %}
+  <p>No low stock items to reorder.</p>
+{% else %}
+  <form method="post">
+    <div>
+      <label for="user">Your Name (for log)</label>
+      <input type="text" id="user" name="user" placeholder="Who is creating this reorder?">
+    </div>
+
+    <div>
+      <label for="extra_cc">Additional CC Emails (comma-separated)</label>
+      <input type="text" id="extra_cc" name="extra_cc" placeholder="e.g. you@robertspest.com, office@robertspest.com">
+    </div>
+
+    {% set vendor_index = 0 %}
+    {% for vendor, items in grouped.items() %}
+      <section class="vendor-section">
+        <h3>Vendor: {{ vendor }}</h3>
+        <input type="hidden" name="vendor_{{ vendor_index }}" value="{{ vendor }}">
+        <table>
+          <thead>
+            <tr>
+              <th>Select</th>
+              <th>Product</th>
+              <th>On Hand</th>
+              <th>Reorder Threshold</th>
+              <th>Suggested Amount</th>
+              <th>Order Amount</th>
+              <th>Reorder Quantity Label</th>
+              <th>Location</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% set row_index = 0 %}
+            {% for item in items %}
+              {% set key_prefix = vendor_index ~ '_' ~ row_index %}
+              <tr>
+                <td>
+                  <input type="checkbox" name="order_{{ key_prefix }}_value" value="{{ item['Reorder Amount'] }}">
+                </td>
+                <td>{{ item['Product Name'] }}</td>
+                <td>{{ item['Quantity on Hand'] }}</td>
+                <td>{{ item['Reorder Threshold'] }}</td>
+                <td>{{ item['Reorder Amount'] }} {{ item['Reorder Quantity'] }}</td>
+                <td>
+                  <input type="number" step="any" name="order_{{ key_prefix }}_value" value="{{ item['Reorder Amount'] }}">
+                </td>
+                <td>{{ item['Reorder Quantity'] }}</td>
+                <td>{{ item['Location'] }}</td>
+              </tr>
+              <input type="hidden" name="item_{{ key_prefix }}_name" value="{{ item['Product Name'] }}">
+              <input type="hidden" name="item_{{ key_prefix }}_location" value="{{ item['Location'] }}">
+              <input type="hidden" name="item_{{ key_prefix }}_label" value="{{ item['Reorder Quantity'] }}">
+              <input type="hidden" name="item_{{ key_prefix }}_suggested" value="{{ item['Reorder Amount'] }}">
+              {% set row_index = row_index + 1 %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+      {% set vendor_index = vendor_index + 1 %}
+    {% endfor %}
+
+    <div class="form-actions">
+      <button type="submit">Create Reorder Requests</button>
+    </div>
+  </form>
+{% endif %}
+{% endblock %}

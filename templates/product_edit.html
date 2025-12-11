@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Edit Product</h2>
+<form method="post">
+  <div>
+    <label for="product_name">Product Name</label>
+    <input type="text" id="product_name" name="product_name" value="{{ product['Product Name'] }}" required>
+  </div>
+
+  <div>
+    <label for="category">Category</label>
+    <input type="text" id="category" name="category" value="{{ product['Category'] }}">
+  </div>
+
+  <div>
+    <label for="quantity_on_hand">Quantity on Hand</label>
+    <div class="number-bump-group">
+      <button type="button" class="bump-btn" onclick="bumpNumber('quantity_on_hand', -1)">-</button>
+      <input type="number" step="1" min="0" id="quantity_on_hand" name="quantity_on_hand" value="{{ product['Quantity on Hand'] }}" required>
+      <button type="button" class="bump-btn" onclick="bumpNumber('quantity_on_hand', 1)">+</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="container_unit">Container Unit</label>
+    <select id="container_unit" name="container_unit">
+      <option value="">-- Select unit --</option>
+      {% for u in container_units %}
+        <option value="{{ u }}" {% if product['Container Unit'] == u %}selected{% endif %}>{{ u }}</option>
+      {% endfor %}
+      <option value="__other__">Other...</option>
+    </select>
+    <input type="text" id="container_unit_other" name="container_unit_other" placeholder="Enter unit" style="display:none; margin-left:0.5rem;">
+  </div>
+
+  <div>
+    <label for="reorder_threshold">Reorder Threshold</label>
+    <div class="number-bump-group">
+      <button type="button" class="bump-btn" onclick="bumpNumber('reorder_threshold', -1)">-</button>
+      <input type="number" step="1" min="0" id="reorder_threshold" name="reorder_threshold" value="{{ product['Reorder Threshold'] }}">
+      <button type="button" class="bump-btn" onclick="bumpNumber('reorder_threshold', 1)">+</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="reorder_amount">Reorder Amount</label>
+    <div class="number-bump-group">
+      <button type="button" class="bump-btn" onclick="bumpNumber('reorder_amount', -1)">-</button>
+      <input type="number" step="1" min="0" id="reorder_amount" name="reorder_amount" value="{{ product['Reorder Amount'] }}">
+      <button type="button" class="bump-btn" onclick="bumpNumber('reorder_amount', 1)">+</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="reorder_quantity">Reorder Quantity (label)</label>
+    <select id="reorder_quantity" name="reorder_quantity">
+      <option value="">-- Select label --</option>
+      {% for lbl in reorder_labels %}
+        <option value="{{ lbl }}" {% if product['Reorder Quantity'] == lbl %}selected{% endif %}>{{ lbl }}</option>
+      {% endfor %}
+      <option value="__other__">Other...</option>
+    </select>
+    <input type="text" id="reorder_quantity_other" name="reorder_quantity_other" placeholder="Enter label" style="display:none; margin-left:0.5rem;">
+  </div>
+
+  <div>
+    <label for="distributor">Distributor</label>
+    <select id="distributor" name="distributor">
+      <option value="">-- Select distributor --</option>
+      {% for d in distributors %}
+        <option value="{{ d }}" {% if product['Distributor'] == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+      <option value="__other__">Other...</option>
+    </select>
+    <input type="text" id="distributor_other" name="distributor_other" placeholder="Enter distributor" style="display:none; margin-left:0.5rem;">
+  </div>
+
+  <div>
+    <label for="location">Location</label>
+    <input type="text" id="location" name="location" value="{{ product['Location'] }}" placeholder="Shop, Truck 1, etc.">
+  </div>
+
+  <div>
+    <label for="cost_per_unit">Cost Per Unit</label>
+    <input type="text" id="cost_per_unit" name="cost_per_unit" value="{{ product['Cost Per Unit'] }}" placeholder="e.g. 12.50">
+  </div>
+
+  <div>
+    <button type="submit">Save Changes</button>
+    <a href="{{ url_for('products') }}">Cancel</a>
+  </div>
+</form>
+<script>
+  function bumpNumber(fieldId, delta) {
+    var input = document.getElementById(fieldId);
+    if (!input) return;
+    var current = parseFloat(input.value || '0');
+    if (isNaN(current)) {
+      current = 0;
+    }
+    var step = parseFloat(input.step || '1');
+    if (isNaN(step) || step <= 0) {
+      step = 1;
+    }
+    var next = current + delta * step;
+    var min = input.min !== '' ? parseFloat(input.min) : null;
+    if (min !== null && !isNaN(min) && next < min) {
+      next = min;
+    }
+    input.value = next.toFixed(0);
+  }
+
+  function toggleOther(selectId, otherInputId, currentValue) {
+    var sel = document.getElementById(selectId);
+    var other = document.getElementById(otherInputId);
+    if (!sel || !other) return;
+    if (sel.value === "__other__") {
+      other.style.display = "inline-block";
+      if (currentValue) {
+        other.value = currentValue;
+      }
+      other.focus();
+    } else {
+      other.style.display = "none";
+      if (sel.value !== "__other__") {
+        other.value = "";
+      }
+    }
+  }
+
+  // Attach change handlers
+  document.getElementById('container_unit').addEventListener('change', function() {
+    toggleOther('container_unit', 'container_unit_other');
+  });
+  document.getElementById('reorder_quantity').addEventListener('change', function() {
+    toggleOther('reorder_quantity', 'reorder_quantity_other');
+  });
+  document.getElementById('distributor').addEventListener('change', function() {
+    toggleOther('distributor', 'distributor_other');
+  });
+
+  // If current product value isn’t in the dropdown list, pre-select Other and show its text
+  (function initOtherFields() {
+    var cuSel = document.getElementById('container_unit');
+    var rqSel = document.getElementById('reorder_quantity');
+    var dSel = document.getElementById('distributor');
+
+    var cuCurrent = "{{ product['Container Unit'] }}";
+    var rqCurrent = "{{ product['Reorder Quantity'] }}";
+    var dCurrent = "{{ product['Distributor'] }}";
+
+    if (cuSel && cuCurrent && !Array.from(cuSel.options).some(o => o.value === cuCurrent)) {
+      cuSel.value = "__other__";
+      toggleOther('container_unit', 'container_unit_other', cuCurrent);
+    }
+    if (rqSel && rqCurrent && !Array.from(rqSel.options).some(o => o.value === rqCurrent)) {
+      rqSel.value = "__other__";
+      toggleOther('reorder_quantity', 'reorder_quantity_other', rqCurrent);
+    }
+    if (dSel && dCurrent && !Array.from(dSel.options).some(o => o.value === dCurrent)) {
+      dSel.value = "__other__";
+      toggleOther('distributor', 'distributor_other', dCurrent);
+    }
+  })();
+</script>
+{% endblock %}

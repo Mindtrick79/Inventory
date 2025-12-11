@@ -1,0 +1,735 @@
+from datetime import datetime
+from typing import List, Dict, Any, DefaultDict, Optional
+from collections import defaultdict
+import smtplib
+from email.message import EmailMessage
+
+import pandas as pd
+
+from .excel_io import load_inventory_workbook, save_inventory_workbook, VENDOR_COLUMNS
+from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL
+import json
+import os
+
+
+LOW_STOCK_STATUS = "LOW_STOCK"
+
+
+SETTINGS_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "settings.json")
+
+
+def load_settings() -> Dict[str, Any]:
+    """Load app settings from settings.json, with sensible defaults."""
+    defaults = {
+        "company_name": "Roberts Inventory Manager",
+        "email_subject_prefix": "Reorder Request - ",
+        "default_email_cc": "",
+        "email_footer": "",
+        "stock_use_notify_emails": "",
+    }
+    if not os.path.exists(SETTINGS_PATH):
+        return defaults
+    try:
+        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        defaults.update(data or {})
+    except Exception:
+        return defaults
+    return defaults
+
+
+def save_settings(settings: Dict[str, Any]) -> None:
+    try:
+        with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=2)
+    except Exception:
+        # Non-fatal; ignore write errors for now.
+        pass
+
+
+def get_all_products() -> List[Dict[str, Any]]:
+    master_df, _, _, _ = load_inventory_workbook()
+    if master_df.empty:
+        return []
+    # Ensure Cost Per Unit column exists for downstream analytics/UI
+    if "Cost Per Unit" not in master_df.columns:
+        master_df["Cost Per Unit"] = ""
+
+    # Replace NaN with empty strings for cleaner display in templates
+    master_df = master_df.fillna("")
+    return master_df.to_dict(orient="records")
+
+
+def get_distinct_product_values(column: str) -> List[str]:
+    """Return sorted distinct non-empty values for a given product column.
+
+    Used to populate dropdowns (e.g. Container Unit, Reorder Quantity).
+    """
+    master_df, _, _, _ = load_inventory_workbook()
+    if master_df.empty or column not in master_df.columns:
+        return []
+    series = master_df[column].dropna().astype(str).str.strip()
+    values = sorted({v for v in series.tolist() if v})
+    return values
+
+
+def rename_product_value(column: str, old_value: str, new_value: str) -> bool:
+    """Rename a value globally in the given product column.
+
+    Returns True if any rows were updated. This is used by the admin
+    Units & Labels screen to clean up container units, reorder labels,
+    or distributors across all products.
+    """
+
+    if not new_value or column not in {"Container Unit", "Reorder Quantity", "Distributor"}:
+        return False
+
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+    if master_df.empty or column not in master_df.columns:
+        return False
+
+    mask = master_df[column].astype(str) == str(old_value)
+    if not mask.any():
+        return False
+
+    master_df.loc[mask, column] = new_value
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+    return True
+
+
+def adjust_product_quantity(
+    product_name: str,
+    delta: float,
+    user: str,
+    location: str = "",
+    notes: str = "",
+) -> Optional[Dict[str, Any]]:
+    """Adjust Quantity on Hand for a product and log to All Transactions.
+
+    Returns dict with updated product info (including new quantity) or None
+    if the product was not found.
+    """
+
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+    if master_df.empty or "Product Name" not in master_df.columns or "Quantity on Hand" not in master_df.columns:
+        return None
+
+    mask = master_df["Product Name"].astype(str) == str(product_name)
+    if not mask.any():
+        return None
+
+    current_qty = float(master_df.loc[mask, "Quantity on Hand"].iloc[0] or 0)
+    new_qty = current_qty + float(delta)
+    if new_qty < 0:
+        new_qty = 0
+
+    master_df.loc[mask, "Quantity on Hand"] = new_qty
+
+    # Prepare transaction row
+    ts = datetime.utcnow().isoformat()
+    row = master_df[mask].iloc[0].fillna("")
+    tx_entry = {
+        "Timestamp": ts,
+        "User": user,
+        "Product Name": row.get("Product Name", ""),
+        "Delta": float(delta),
+        "New Quantity on Hand": new_qty,
+        "Location": location or row.get("Location", ""),
+        "Notes": notes,
+    }
+
+    # Ensure tx_df has needed columns
+    if tx_df.empty:
+        tx_df = pd.DataFrame(columns=list(tx_entry.keys()))
+    for col in tx_entry.keys():
+        if col not in tx_df.columns:
+            tx_df[col] = ""
+
+    tx_df = pd.concat([tx_df, pd.DataFrame([tx_entry])], ignore_index=True)
+
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+
+    return {
+        "product_name": row.get("Product Name", ""),
+        "old_quantity": current_qty,
+        "new_quantity": new_qty,
+        "location": tx_entry["Location"],
+    }
+
+
+def get_product_by_name(product_name: str) -> Optional[Dict[str, Any]]:
+    """Return a single product row by Product Name, or None if not found."""
+    master_df, _, _, _ = load_inventory_workbook()
+    if master_df.empty or "Product Name" not in master_df.columns:
+        return None
+
+    mask = master_df["Product Name"].astype(str) == str(product_name)
+    if not mask.any():
+        return None
+
+    row = master_df[mask].iloc[0].fillna("")
+    # Ensure Cost Per Unit key exists for the form
+    if "Cost Per Unit" not in row.index:
+        row["Cost Per Unit"] = ""
+    return row.to_dict()
+
+
+def update_product(original_name: str, data: Dict[str, Any]) -> bool:
+    """Update a product identified by its original Product Name.
+
+    Returns True if an existing row was updated, False if no matching row
+    was found. This treats Product Name as the key.
+    """
+
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+    if master_df.empty or "Product Name" not in master_df.columns:
+        return False
+
+    mask = master_df["Product Name"].astype(str) == str(original_name)
+    if not mask.any():
+        return False
+
+    # Only update known columns; ignore extras.
+    for col, value in data.items():
+        if col in master_df.columns:
+            master_df.loc[mask, col] = value
+
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+    return True
+
+
+def get_low_stock_products() -> List[Dict[str, Any]]:
+    master_df, _, _, _ = load_inventory_workbook()
+    if master_df.empty:
+        return []
+    if "Quantity on Hand" not in master_df.columns or "Reorder Threshold" not in master_df.columns:
+        return []
+    mask = master_df["Quantity on Hand"] <= master_df["Reorder Threshold"]
+    low_df = master_df[mask].copy()
+    low_df = low_df.fillna("")
+    return low_df.to_dict(orient="records")
+
+
+def get_low_stock_grouped_by_vendor() -> Dict[str, List[Dict[str, Any]]]:
+    """Return low stock items grouped by Distributor (vendor).
+
+    {"Vendor A": [item1, item2], "Vendor B": [...], ...}
+    """
+    items = get_low_stock_products()
+    grouped: DefaultDict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for item in items:
+        vendor = item.get("Distributor") or "(No Vendor)"
+        grouped[vendor].append(item)
+    return dict(grouped)
+
+
+def add_product(data: Dict[str, Any]) -> None:
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+    new_row = pd.DataFrame([data])
+    master_df = pd.concat([master_df, new_row], ignore_index=True)
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+
+
+def _get_vendor_contact(vendor_name: str) -> Optional[Dict[str, Any]]:
+    """Look up a vendor row in the Vendors sheet by Vendor Name."""
+    _, _, vendors_df, _ = load_inventory_workbook()
+    if vendors_df.empty or "Vendor Name" not in vendors_df.columns:
+        return None
+
+    match = vendors_df[vendors_df["Vendor Name"].astype(str) == str(vendor_name)]
+    if match.empty:
+        return None
+    row = match.iloc[0].fillna("")
+    return row.to_dict()
+
+
+def send_reorder_email(
+    vendor: str,
+    items_description: str,
+    notes: str = "",
+    extra_cc: Optional[List[str]] = None,
+) -> bool:
+    """Send a reorder email to the vendor.
+
+    Returns True if the email was sent without raising, False otherwise.
+    """
+    contact = _get_vendor_contact(vendor)
+    if not contact:
+        return False
+
+    to_email = str(contact.get("Email", "")).strip()
+    cc_raw = str(contact.get("CC Emails", ""))
+    cc_emails = [e.strip() for e in cc_raw.split(",") if e.strip()]
+    vendor_notes = str(contact.get("Notes", "")).strip()
+
+    if not to_email:
+        return False
+
+    settings = load_settings()
+    prefix = settings.get("email_subject_prefix", "Reorder Request - ")
+    default_cc_raw = settings.get("default_email_cc", "")
+    default_cc = [e.strip() for e in str(default_cc_raw).split(",") if e.strip()]
+
+    subject = f"{prefix}{vendor}"
+
+    body_lines = [
+        f"Vendor: {vendor}",
+        "",
+        "The following items are requested for reorder:",
+        items_description,
+    ]
+    if notes:
+        body_lines.extend(["", f"Request Notes: {notes}"])
+    if vendor_notes:
+        body_lines.extend(["", f"Vendor Notes: {vendor_notes}"])
+
+    footer = settings.get("email_footer", "")
+    if footer:
+        body_lines.extend(["", footer])
+
+    body = "\n".join(body_lines)
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = FROM_EMAIL
+    msg["To"] = to_email
+    if cc_emails:
+        msg["Cc"] = ", ".join(cc_emails)
+    msg.set_content(body)
+
+    extra_cc = extra_cc or []
+    recipients = [to_email] + cc_emails + default_cc + extra_cc
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            if SMTP_USER and SMTP_PASS and SMTP_PASS != "CHANGE_ME":
+                server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg, from_addr=FROM_EMAIL, to_addrs=recipients)
+        return True
+    except Exception:
+        # For now, swallow and signal failure; web UI can show FAILED status.
+        return False
+
+
+def log_reorder(
+    user: str,
+    ip: str,
+    vendor: str,
+    items_description: str,
+    status: str = "PENDING",
+    notes: str = "",
+) -> None:
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+
+    timestamp = datetime.utcnow().isoformat()
+    new_entry = {
+        "Timestamp": timestamp,
+        "User": user,
+        "IP": ip,
+        "Vendor": vendor,
+        "Items": items_description,
+        "Status": status,
+        "Notes": notes,
+        "Approved Timestamp": "",
+        "Approved By": "",
+        "Approved IP": "",
+    }
+
+    reorder_log_df = pd.concat([reorder_log_df, pd.DataFrame([new_entry])], ignore_index=True)
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+
+
+def get_reorder_log() -> List[Dict[str, Any]]:
+    """Return all rows from the Reorder Log sheet as dicts."""
+    _, _, _, reorder_log_df = load_inventory_workbook()
+    if reorder_log_df.empty:
+        return []
+    return reorder_log_df.to_dict(orient="records")
+
+
+def get_pending_reorders() -> List[Dict[str, Any]]:
+    """Return only rows with Status == 'PENDING'."""
+    _, _, _, reorder_log_df = load_inventory_workbook()
+    if reorder_log_df.empty or "Status" not in reorder_log_df.columns:
+        return []
+    pending_df = reorder_log_df[reorder_log_df["Status"] == "PENDING"]
+    return pending_df.to_dict(orient="records")
+
+
+def get_all_vendors() -> List[Dict[str, Any]]:
+    """Return all vendors as dicts, ensuring standard columns exist."""
+    _, _, vendors_df, _ = load_inventory_workbook()
+    if vendors_df.empty:
+        vendors_df = pd.DataFrame(columns=VENDOR_COLUMNS)
+
+    for col in VENDOR_COLUMNS:
+        if col not in vendors_df.columns:
+            vendors_df[col] = ""
+
+    vendors_df = vendors_df.fillna("")
+    return vendors_df.to_dict(orient="records")
+
+
+def upsert_vendor(data: Dict[str, Any]) -> None:
+    """Insert or update a vendor row based on Vendor Name."""
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+    name = str(data.get("Vendor Name", "")).strip()
+    if not name:
+        return
+
+    if vendors_df.empty:
+        vendors_df = pd.DataFrame(columns=VENDOR_COLUMNS)
+
+    for col in VENDOR_COLUMNS:
+        if col not in vendors_df.columns:
+            vendors_df[col] = ""
+
+    vendors_df = vendors_df.fillna("")
+
+    mask = vendors_df["Vendor Name"].astype(str) == name
+    row_data = {col: data.get(col, "") for col in VENDOR_COLUMNS}
+
+    if mask.any():
+        # Update existing
+        for col, value in row_data.items():
+            vendors_df.loc[mask, col] = value
+    else:
+        # Insert new
+        vendors_df = pd.concat([vendors_df, pd.DataFrame([row_data])], ignore_index=True)
+
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+
+
+def update_reorder_status(
+    timestamp: str,
+    vendor: str,
+    new_status: str,
+    approved_by: str,
+    approved_ip: str,
+) -> None:
+    """Update the status and approval metadata for a reorder log row.
+
+    Rows are identified by (Timestamp, Vendor). This is simple and good enough for
+    this internal tool; if duplicates ever happen, all matching rows are updated.
+    """
+    master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
+    if reorder_log_df.empty:
+        return
+
+    mask = (reorder_log_df["Timestamp"].astype(str) == str(timestamp)) & (
+        reorder_log_df["Vendor"].astype(str) == str(vendor)
+    )
+
+    if not mask.any():
+        return
+
+    reorder_log_df.loc[mask, "Status"] = new_status
+    now = datetime.utcnow().isoformat()
+    reorder_log_df.loc[mask, "Approved Timestamp"] = now
+    reorder_log_df.loc[mask, "Approved By"] = approved_by
+    reorder_log_df.loc[mask, "Approved IP"] = approved_ip
+
+    save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
+
+
+def get_products_for_vendor(vendor_name: str) -> List[Dict[str, Any]]:
+    """Return all products whose Distributor matches the given vendor.
+
+    Ensures Cost Per Unit exists for downstream pricing workflows.
+    """
+    master_df, _, _, _ = load_inventory_workbook()
+    if master_df.empty or "Distributor" not in master_df.columns:
+        return []
+
+    if "Cost Per Unit" not in master_df.columns:
+        master_df["Cost Per Unit"] = ""
+
+    mask = master_df["Distributor"].astype(str) == str(vendor_name)
+    subset = master_df[mask].copy()
+    subset = subset.fillna("")
+    return subset.to_dict(orient="records")
+
+
+def send_pricing_request_email(
+    vendor: str,
+    products: List[Dict[str, Any]],
+    notes: str = "",
+    extra_cc: Optional[List[str]] = None,
+) -> bool:
+    """Send a pricing request email listing the given products for a vendor.
+
+    This reuses the vendor contact information and email settings but uses a
+    different subject prefix and body wording so vendors know it's a quote
+    request instead of a reorder.
+    """
+
+    contact = _get_vendor_contact(vendor)
+    if not contact:
+        return False
+
+    to_email = str(contact.get("Email", "")).strip()
+    cc_raw = str(contact.get("CC Emails", ""))
+    cc_emails = [e.strip() for e in cc_raw.split(",") if e.strip()]
+    vendor_notes = str(contact.get("Notes", "")).strip()
+
+    if not to_email:
+        return False
+
+    settings = load_settings()
+    # Reuse email_subject_prefix but clarify this is a pricing request
+    prefix = settings.get("email_subject_prefix", "Reorder Request - ")
+    subject = f"Pricing Request - {vendor}"
+    default_cc_raw = settings.get("default_email_cc", "")
+    default_cc = [e.strip() for e in str(default_cc_raw).split(",") if e.strip()]
+
+    lines: List[str] = [
+        f"Vendor: {vendor}",
+        "",
+        "We are requesting current pricing for the following products:",
+        "",
+    ]
+
+    if not products:
+        lines.append("(No products specified)")
+    else:
+        for p in products:
+            name = str(p.get("Product Name", "")).strip()
+            unit = str(p.get("Container Unit", "")).strip()
+            reorder_qty = str(p.get("Reorder Quantity", "")).strip()
+            current_cost = str(p.get("Cost Per Unit", "")).strip()
+            line = f"- {name} | Unit: {unit or '-'} | Label: {reorder_qty or '-'} | Current Cost: {current_cost or 'N/A'}"
+            lines.append(line)
+
+    if notes:
+        lines.extend(["", f"Request Notes: {notes}"])
+    if vendor_notes:
+        lines.extend(["", f"Vendor Notes: {vendor_notes}"])
+
+    footer = settings.get("email_footer", "")
+    if footer:
+        lines.extend(["", footer])
+
+    body = "\n".join(lines)
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = FROM_EMAIL
+    msg["To"] = to_email
+    if cc_emails:
+        msg["Cc"] = ", ".join(cc_emails)
+    msg.set_content(body)
+
+    extra_cc = extra_cc or []
+    recipients = [to_email] + cc_emails + default_cc + extra_cc
+
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            if SMTP_USER and SMTP_PASS and SMTP_PASS != "CHANGE_ME":
+                server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg, from_addr=FROM_EMAIL, to_addrs=recipients)
+        return True
+    except Exception:
+        return False
+
+
+def get_reorder_analytics(start_date: Optional[str], end_date: Optional[str]) -> Dict[str, Any]:
+    """Compute basic spend analytics from the Reorder Log using Cost Per Unit.
+
+    Dates are expected as ISO strings (YYYY-MM-DD). We only count rows with
+    Status == "SENT" so that only actually-sent reorders impact spend.
+    """
+
+    master_df, _, _, reorder_log_df = load_inventory_workbook()
+
+    # Default empty structure for when there is no data
+    empty_result: Dict[str, Any] = {
+        "total_spend": 0.0,
+        "total_orders": 0,
+        "total_vendors": 0,
+        "top_vendor": None,
+        "top_product": None,
+        "spend_by_day": {"labels": [], "data": []},
+        "spend_by_vendor": {"labels": [], "data": []},
+        "top_products": {"labels": [], "data": []},
+    }
+
+    if reorder_log_df.empty or "Status" not in reorder_log_df.columns:
+        return empty_result
+
+    # Parse timestamps
+    if "Timestamp" not in reorder_log_df.columns:
+        return empty_result
+
+    df = reorder_log_df.copy()
+    df["Timestamp_dt"] = pd.to_datetime(df["Timestamp"], errors="coerce")
+    df = df.dropna(subset=["Timestamp_dt"])
+    if df.empty:
+        return empty_result
+
+    # Filter by status (only SENT counted as real spend)
+    df = df[df["Status"] == "SENT"]
+    if df.empty:
+        return empty_result
+
+    # Date range filtering
+    min_date = df["Timestamp_dt"].min().date()
+    max_date = df["Timestamp_dt"].max().date()
+
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date).date()
+        except ValueError:
+            start_dt = min_date
+    else:
+        start_dt = min_date
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date).date()
+        except ValueError:
+            end_dt = max_date
+    else:
+        end_dt = max_date
+
+    mask = (df["Timestamp_dt"].dt.date >= start_dt) & (df["Timestamp_dt"].dt.date <= end_dt)
+    df = df[mask]
+    if df.empty:
+        return empty_result
+
+    # Build item-level rows by parsing the Items description field.
+    item_rows: List[Dict[str, Any]] = []
+
+    for _, row in df.iterrows():
+        vendor = str(row.get("Vendor", ""))
+        ts_date = row["Timestamp_dt"].date()
+        items_text = str(row.get("Items", ""))
+        if not items_text:
+            continue
+        # Items are stored as "; "-separated descriptions
+        parts = [p.strip() for p in items_text.split(";") if p.strip()]
+        for part in parts:
+            # Expected format: "Product Name – Order: X UNIT (Suggested: ... )"
+            product_name = ""
+            quantity = 0.0
+
+            try:
+                # Split on the en dash / hyphen sequence before "Order:"
+                if "Order:" in part:
+                    name_part, rest = part.split("Order:", 1)
+                    # name_part like "Product Name – "
+                    product_name = name_part.split("–", 1)[0].strip()
+
+                    # rest like " X UNIT (Suggested: ... )"
+                    rest = rest.strip()
+                    # quantity is first token
+                    qty_token = rest.split()[0]
+                    quantity = float(qty_token)
+                else:
+                    # Fallback: treat whole part as name with qty 0
+                    product_name = part.strip()
+            except Exception:
+                # If parsing fails, skip this line but keep others
+                continue
+
+            if not product_name:
+                continue
+
+            item_rows.append(
+                {
+                    "date": ts_date,
+                    "vendor": vendor,
+                    "product": product_name,
+                    "quantity": quantity,
+                }
+            )
+
+    if not item_rows:
+        return empty_result
+
+    items_df = pd.DataFrame(item_rows)
+
+    # Prepare master data for join: Product Name + Cost Per Unit + Distributor
+    if master_df.empty or "Product Name" not in master_df.columns:
+        # We can still return volume-based metrics without cost
+        items_df["Cost Per Unit"] = 0.0
+        items_df["spend"] = 0.0
+    else:
+        if "Cost Per Unit" not in master_df.columns:
+            master_df["Cost Per Unit"] = 0.0
+        if "Distributor" not in master_df.columns:
+            master_df["Distributor"] = ""
+
+        cost_df = master_df[["Product Name", "Distributor", "Cost Per Unit"]].copy()
+        cost_df["Cost Per Unit"] = pd.to_numeric(cost_df["Cost Per Unit"], errors="coerce").fillna(0.0)
+
+        merged = items_df.merge(
+            cost_df,
+            left_on="product",
+            right_on="Product Name",
+            how="left",
+        )
+
+        merged["Cost Per Unit"] = pd.to_numeric(merged["Cost Per Unit"], errors="coerce").fillna(0.0)
+        merged["spend"] = merged["quantity"] * merged["Cost Per Unit"]
+        items_df = merged
+
+    total_spend = float(items_df["spend"].sum()) if "spend" in items_df.columns else 0.0
+    total_orders = int(df.shape[0])
+    total_vendors = int(df["Vendor"].nunique()) if "Vendor" in df.columns else 0
+
+    # Spend by day
+    if "spend" in items_df.columns:
+        by_day = items_df.groupby("date")["spend"].sum().sort_index()
+        spend_by_day = {
+            "labels": [d.isoformat() for d in by_day.index],
+            "data": [round(float(v), 2) for v in by_day.values],
+        }
+    else:
+        spend_by_day = {"labels": [], "data": []}
+
+    # Spend by vendor
+    if "spend" in items_df.columns:
+        by_vendor = items_df.groupby("vendor")["spend"].sum().sort_values(ascending=False)
+        spend_by_vendor = {
+            "labels": [str(k) for k in by_vendor.index],
+            "data": [round(float(v), 2) for v in by_vendor.values],
+        }
+        top_vendor = (
+            {"name": str(by_vendor.index[0]), "spend": round(float(by_vendor.iloc[0]), 2)}
+            if not by_vendor.empty
+            else None
+        )
+    else:
+        spend_by_vendor = {"labels": [], "data": []}
+        top_vendor = None
+
+    # Top products by spend
+    if "spend" in items_df.columns:
+        by_product = items_df.groupby("product")["spend"].sum().sort_values(ascending=False).head(10)
+        top_products = {
+            "labels": [str(k) for k in by_product.index],
+            "data": [round(float(v), 2) for v in by_product.values],
+        }
+        top_product = (
+            {"name": str(by_product.index[0]), "spend": round(float(by_product.iloc[0]), 2)}
+            if not by_product.empty
+            else None
+        )
+    else:
+        top_products = {"labels": [], "data": []}
+        top_product = None
+
+    return {
+        "total_spend": round(total_spend, 2),
+        "total_orders": total_orders,
+        "total_vendors": total_vendors,
+        "top_vendor": top_vendor,
+        "top_product": top_product,
+        "spend_by_day": spend_by_day,
+        "spend_by_vendor": spend_by_vendor,
+        "top_products": top_products,
+        "start_date": start_dt.isoformat(),
+        "end_date": end_dt.isoformat(),
+    }

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Roberts Inventory Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>{{ settings.company_name if settings is defined else 'Roberts Inventory Manager' }}</h1>
+      <nav>
+        {% set role = session.get('role', 'VIEW') %}
+
+        <a href="{{ url_for('index') }}">Dashboard</a>
+        <a href="{{ url_for('products') }}">Products</a>
+        <a href="{{ url_for('reorder_log') }}">Reorder Log</a>
+
+        {# Request-level and above: can create reorders and pricing requests #}
+        {% if role in ['REQUEST', 'APPROVER', 'ADMIN'] %}
+          <a href="{{ url_for('reorder') }}">Reorder</a>
+          <a href="{{ url_for('pricing_request') }}">Pricing Request</a>
+          <a href="{{ url_for('stock_use') }}">Stock Use</a>
+        {% endif %}
+
+        {# Approver-level and above: can see approvals #}
+        {% if role in ['APPROVER', 'ADMIN'] %}
+          <a href="{{ url_for('approvals') }}">Approvals</a>
+        {% endif %}
+
+        {# Admin-only: vendors and user management #}
+        {% if role == 'ADMIN' %}
+          <a href="{{ url_for('vendors') }}">Vendors</a>
+          <a href="{{ url_for('manage_users') }}">Users</a>
+          <a href="{{ url_for('manage_units') }}">Units &amp; Labels</a>
+        {% endif %}
+
+        {% if session.get('username') %}
+          <span class="nav-user">Logged in as {{ session['username'] }} ({{ role }})</span>
+          <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Login</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-messages">
+            {% for category, message in messages %}
+              <li class="flash-{{ category }}">{{ message }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

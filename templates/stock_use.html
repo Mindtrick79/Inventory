@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Stock Use</h2>
+<p>Record materials used so inventory can be adjusted and logged.</p>
+
+<form method="get" class="search-form">
+  <label for="q">Search</label>
+  <input type="text" id="q" name="q" value="{{ query or '' }}" placeholder="Name, category, vendor, or location">
+  <button type="submit">Filter</button>
+  {% if query %}
+    <a href="{{ url_for('stock_use') }}">Clear</a>
+  {% endif %}
+</form>
+
+{% if products %}
+<table>
+  <thead>
+    <tr>
+      <th>Product Name</th>
+      <th>Location</th>
+      <th>Quantity on Hand</th>
+      <th>Unit</th>
+      <th>Use Amount</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for p in products %}
+    <tr>
+      <td>{{ p['Product Name'] }}</td>
+      <td>{{ p['Location'] }}</td>
+      <td>{{ p['Quantity on Hand'] }}</td>
+      <td>{{ p['Container Unit'] }}</td>
+      <td>
+        <form method="post" style="display:flex; gap:0.5rem; align-items:center;">
+          <input type="hidden" name="product_name" value="{{ p['Product Name'] }}">
+          <input type="hidden" name="location" value="{{ p['Location'] }}">
+          <input type="number" step="1" min="1" name="amount" style="width:4rem;" required>
+          <button type="submit">Used</button>
+        </form>
+      </td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No products found.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Dashboard</h2>
+<p>Welcome to Roberts Inventory Manager.</p>
+
+<section>
+  <h3>Summary</h3>
+  <p>Total products: {{ total_products }}</p>
+
+  {% if analytics %}
+  <div class="summary-cards">
+    <div class="card">
+      <h4>Total Spend</h4>
+      <p>${{ '%.2f'|format(analytics.total_spend) }}</p>
+    </div>
+    <div class="card">
+      <h4>Total Orders</h4>
+      <p>{{ analytics.total_orders }}</p>
+    </div>
+    <div class="card">
+      <h4>Total Vendors</h4>
+      <p>{{ analytics.total_vendors }}</p>
+    </div>
+    <div class="card">
+      <h4>Top Vendor</h4>
+      <p>
+        {% if analytics.top_vendor %}
+          {{ analytics.top_vendor.name }} (${{ '%.2f'|format(analytics.top_vendor.spend) }})
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+    <div class="card">
+      <h4>Top Product</h4>
+      <p>
+        {% if analytics.top_product %}
+          {{ analytics.top_product.name }} (${{ '%.2f'|format(analytics.top_product.spend) }})
+        {% else %}
+          N/A
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <form method="get" class="date-filter-form">
+    <label for="start_date">Start date</label>
+    <input type="date" id="start_date" name="start_date" value="{{ analytics.start_date }}">
+
+    <label for="end_date">End date</label>
+    <input type="date" id="end_date" name="end_date" value="{{ analytics.end_date }}">
+
+    <button type="submit">Apply</button>
+  </form>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h4>Spend per Day</h4>
+      <canvas id="spendPerDayChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h4>Spend by Vendor</h4>
+      <canvas id="spendByVendorChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h4>Top Products by Spend</h4>
+      <canvas id="topProductsChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var analytics = {{ analytics|tojson }};
+
+      var dayCtx = document.getElementById('spendPerDayChart');
+      if (dayCtx && analytics.spend_by_day.labels.length) {
+        new Chart(dayCtx, {
+          type: 'line',
+          data: {
+            labels: analytics.spend_by_day.labels,
+            datasets: [{
+              label: 'Spend ($)',
+              data: analytics.spend_by_day.data,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              tension: 0.2,
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      var vendorCtx = document.getElementById('spendByVendorChart');
+      if (vendorCtx && analytics.spend_by_vendor.labels.length) {
+        new Chart(vendorCtx, {
+          type: 'bar',
+          data: {
+            labels: analytics.spend_by_vendor.labels,
+            datasets: [{
+              label: 'Spend ($)',
+              data: analytics.spend_by_vendor.data,
+              backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { beginAtZero: true }
+            }
+          }
+        });
+      }
+
+      var productCtx = document.getElementById('topProductsChart');
+      if (productCtx && analytics.top_products.labels.length) {
+        new Chart(productCtx, {
+          type: 'bar',
+          data: {
+            labels: analytics.top_products.labels,
+            datasets: [{
+              label: 'Spend ($)',
+              data: analytics.top_products.data,
+              backgroundColor: 'rgba(255, 159, 64, 0.6)',
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            scales: {
+              x: { beginAtZero: true }
+            }
+          }
+        });
+      }
+    })();
+  </script>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Low Stock Items</h3>
+  {% if low_stock %}
+  <table>
+    <thead>
+      <tr>
+        <th>Product Name</th>
+        <th>Category</th>
+        <th>Quantity on Hand</th>
+        <th>Reorder Threshold</th>
+        <th>Distributor</th>
+        <th>Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in low_stock %}
+      <tr>
+        <td>{{ item['Product Name'] }}</td>
+        <td>{{ item['Category'] }}</td>
+        <td>{{ item['Quantity on Hand'] }}</td>
+        <td>{{ item['Reorder Threshold'] }}</td>
+        <td>{{ item['Distributor'] }}</td>
+        <td>{{ item['Location'] }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>No low stock items.</p>
+  {% endif %}
+</section>
+{% endblock %}

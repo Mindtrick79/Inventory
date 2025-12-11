@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Settings</h2>
+<p>Application configuration. (Intended for admin users.)</p>
+
+<form method="post">
+  <div>
+    <label for="company_name">Company / App Name</label>
+    <input type="text" id="company_name" name="company_name" value="{{ settings.company_name }}">
+  </div>
+
+  <div>
+    <label for="email_subject_prefix">Email Subject Prefix</label>
+    <input type="text" id="email_subject_prefix" name="email_subject_prefix" value="{{ settings.email_subject_prefix }}">
+  </div>
+
+  <div>
+    <label for="default_email_cc">Default Email CCs (comma-separated)</label>
+    <input type="text" id="default_email_cc" name="default_email_cc" value="{{ settings.default_email_cc }}">
+  </div>
+
+  <div>
+    <label for="email_footer">Email Footer</label>
+    <textarea id="email_footer" name="email_footer" rows="3">{{ settings.email_footer }}</textarea>
+  </div>
+
+  <div>
+    <label for="stock_use_notify_emails">Stock Use Notification Emails (comma-separated)</label>
+    <input type="text" id="stock_use_notify_emails" name="stock_use_notify_emails" value="{{ settings.stock_use_notify_emails }}" placeholder="inventory@example.com, manager@example.com">
+  </div>
+
+  <div class="form-actions">
+    <button type="submit">Save Settings</button>
+  </div>
+</form>
+{% endblock %}

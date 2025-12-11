@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Units &amp; Labels Management</h2>
+<p>Admin-only: rename container units, reorder quantity labels, and distributors across all products.</p>
+
+<section>
+  <h3>Container Units</h3>
+  {% if container_units %}
+  <table>
+    <thead>
+      <tr>
+        <th>Current Unit</th>
+        <th>Rename To</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in container_units %}
+      <tr>
+        <td>{{ u }}</td>
+        <td>
+          <form method="post" style="display:flex; gap:0.5rem; align-items:center;">
+            <input type="hidden" name="column" value="Container Unit">
+            <input type="hidden" name="old_value" value="{{ u }}">
+            <input type="text" name="new_value" placeholder="New value" required>
+            <button type="submit">Rename</button>
+          </form>
+        </td>
+        <td></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No container units found.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Reorder Quantity Labels</h3>
+  {% if reorder_labels %}
+  <table>
+    <thead>
+      <tr>
+        <th>Current Label</th>
+        <th>Rename To</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lbl in reorder_labels %}
+      <tr>
+        <td>{{ lbl }}</td>
+        <td>
+          <form method="post" style="display:flex; gap:0.5rem; align-items:center;">
+            <input type="hidden" name="column" value="Reorder Quantity">
+            <input type="hidden" name="old_value" value="{{ lbl }}">
+            <input type="text" name="new_value" placeholder="New value" required>
+            <button type="submit">Rename</button>
+          </form>
+        </td>
+        <td></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No reorder quantity labels found.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Distributors</h3>
+  {% if distributors %}
+  <table>
+    <thead>
+      <tr>
+        <th>Current Distributor</th>
+        <th>Rename To</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in distributors %}
+      <tr>
+        <td>{{ d }}</td>
+        <td>
+          <form method="post" style="display:flex; gap:0.5rem; align-items:center;">
+            <input type="hidden" name="column" value="Distributor">
+            <input type="hidden" name="old_value" value="{{ d }}">
+            <input type="text" name="new_value" placeholder="New value" required>
+            <button type="submit">Rename</button>
+          </form>
+        </td>
+        <td></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No distributors found.</p>
+  {% endif %}
+</section>
+
+{% endblock %}

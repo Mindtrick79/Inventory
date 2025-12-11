@@ -1,0 +1,162 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f5f5f5;
+}
+
+header {
+  background-color: #1f4e79;
+  color: white;
+  padding: 1rem;
+}
+
+header h1 {
+  margin: 0 0 0.5rem 0;
+}
+
+nav a {
+  color: white;
+  margin-right: 1rem;
+  text-decoration: none;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+main {
+  padding: 1.5rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 1rem;
+  background-color: white;
+}
+
+th,
+td {
+  border: 1px solid #ddd;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+th {
+  background-color: #e3edf5;
+  text-align: left;
+}
+
+tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+tr:hover {
+  background-color: #f1f7ff;
+}
+
+.vendor-section {
+  margin-top: 1.5rem;
+}
+
+.form-actions {
+  margin-top: 1rem;
+}
+
+form div {
+  margin-bottom: 0.75rem;
+}
+
+input[type="text"],
+input[type="number"] {
+  padding: 0.3rem 0.4rem;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+button {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 3px;
+  background-color: #1f4e79;
+  color: #fff;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #173958;
+}
+
+.flash-messages {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.flash-messages li {
+  padding: 0.5rem 0.75rem;
+  border-radius: 3px;
+  margin-bottom: 0.5rem;
+}
+
+.flash-success {
+  background-color: #e6f4ea;
+  color: #176a3a;
+}
+
+.flash-warning {
+  background-color: #fff4e5;
+  color: #8a5a00;
+}
+
+.flash-danger {
+  background-color: #fdecea;
+  color: #b3261e;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.4rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.status-PENDING {
+  background-color: #fff4e5;
+  color: #8a5a00;
+}
+
+.status-APPROVED {
+  background-color: #e6f4ea;
+  color: #176a3a;
+}
+
+.status-REJECTED {
+  background-color: #fdecea;
+  color: #b3261e;
+}
+
+.number-bump-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.number-bump-group input[type="number"] {
+  width: 5rem;
+}
+
+.bump-btn {
+  padding: 0.2rem 0.4rem;
+  background-color: #e3edf5;
+  color: #1f4e79;
+  border: 1px solid #1f4e79;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bump-btn:hover {
+  background-color: #c9dde9;
+}

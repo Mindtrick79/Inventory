@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>User Management</h2>
+<p>Admin-only: manage application users, roles, and passwords.</p>
+
+<section>
+  <h3>Existing Users</h3>
+  {% if users %}
+  <table>
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ u.username }}</td>
+        <td>{{ u.role }}</td>
+        <td>
+          <button type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}')">Edit</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p>No users found.</p>
+  {% endif %}
+</section>
+
+<section>
+  <h3>Add / Update User</h3>
+  <form method="post">
+    <div>
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
+    </div>
+    <div>
+      <label for="password">Password (leave blank to keep existing)</label>
+      <input type="password" id="password" name="password">
+    </div>
+    <div>
+      <label for="role">Role</label>
+      <select id="role" name="role">
+        {% for r in roles %}
+          <option value="{{ r }}">{{ r }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <button type="submit">Save User</button>
+    </div>
+  </form>
+</section>
+
+<script>
+  function editUser(username, role) {
+    var uInput = document.getElementById('username');
+    var roleSelect = document.getElementById('role');
+    if (uInput) {
+      uInput.value = username;
+    }
+    if (roleSelect) {
+      for (var i = 0; i < roleSelect.options.length; i++) {
+        if (roleSelect.options[i].value === role) {
+          roleSelect.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    // Scroll form into view on smaller screens
+    var form = document.querySelector('form');
+    if (form && form.scrollIntoView) {
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+</script>
+
+{% endblock %}
