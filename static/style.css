@@ -320,6 +320,35 @@ section {
   justify-content: flex-end;
 }
 
+.form-card {
+  background: var(--color-card-bg);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius, 6px);
+  box-shadow: var(--shadow-sm);
+  padding: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.form-card__title {
+  font-weight: 900;
+  margin-bottom: 0.65rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.form-field {
+  grid-column: span 4;
+}
+
+.form-field--span-12 {
+  grid-column: span 12;
+}
+
 .table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -790,12 +819,13 @@ main table a:hover {
 
 .status-badge {
   display: inline-block;
-  padding: 0.15rem 0.4rem;
+  padding: 0.18rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: bold;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
   border: 1px solid rgba(0, 0, 0, 0.10);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   transform: translateZ(0);
 }
 
@@ -823,6 +853,7 @@ main table a:hover {
 .status-FAILED {
   background-color: #fdecea;
   color: #b3261e;
+  animation: statusPulse 1.6s ease-in-out infinite;
 }
 
 .product-thumb {
