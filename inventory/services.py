@@ -13,6 +13,11 @@ from config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL
 import json
 import os
 
+from config import DB_PATH
+from .sqlite_db import get_all_products as sqlite_get_all_products
+from .sqlite_db import get_pending_reorders as sqlite_get_pending_reorders
+from .sqlite_db import get_reorder_log as sqlite_get_reorder_log
+
 
 LOW_STOCK_STATUS = "LOW_STOCK"
 
@@ -197,6 +202,13 @@ def send_html_email(
 
 
 def get_all_products() -> List[Dict[str, Any]]:
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return sqlite_get_all_products(DB_PATH)
+        except Exception:
+            pass
+
     master_df, _, _, _ = load_inventory_workbook()
     if master_df.empty:
         return []
@@ -501,6 +513,13 @@ def log_reorder(
 
 def get_reorder_log() -> List[Dict[str, Any]]:
     """Return all rows from the Reorder Log sheet as dicts."""
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return sqlite_get_reorder_log(DB_PATH)
+        except Exception:
+            pass
+
     _, _, _, reorder_log_df = load_inventory_workbook()
     if reorder_log_df.empty:
         return []
@@ -509,6 +528,13 @@ def get_reorder_log() -> List[Dict[str, Any]]:
 
 def get_pending_reorders() -> List[Dict[str, Any]]:
     """Return only rows with Status == 'PENDING'."""
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return sqlite_get_pending_reorders(DB_PATH)
+        except Exception:
+            pass
+
     _, _, _, reorder_log_df = load_inventory_workbook()
     if reorder_log_df.empty or "Status" not in reorder_log_df.columns:
         return []

@@ -2,7 +2,7 @@ import json
 import os
 import sqlite3
 from datetime import datetime
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -268,3 +268,49 @@ def get_counts(db_path: str) -> Dict[str, int]:
         for table in ["products", "vendors", "reorder_log", "transactions"]:
             res[table] = int(conn.execute(f"SELECT COUNT(*) AS c FROM {table}").fetchone()["c"])
         return res
+
+
+def _row_json_to_dict(row_json: str) -> Dict[str, Any]:
+    try:
+        d = json.loads(row_json or "{}")
+        if isinstance(d, dict):
+            return d
+        return {}
+    except Exception:
+        return {}
+
+
+def get_all_products(db_path: str) -> List[Dict[str, Any]]:
+    """Return product dicts in the same shape as Excel-based get_all_products()."""
+    init_db(db_path)
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT data_json FROM products ORDER BY product_name COLLATE NOCASE"
+        ).fetchall()
+
+    products = [_row_json_to_dict(r["data_json"]) for r in rows]
+    for p in products:
+        if "Cost Per Unit" not in p:
+            p["Cost Per Unit"] = ""
+    return products
+
+
+def get_reorder_log(db_path: str) -> List[Dict[str, Any]]:
+    """Return reorder log dicts in the same shape as Excel-based get_reorder_log()."""
+    init_db(db_path)
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT data_json FROM reorder_log ORDER BY timestamp DESC"
+        ).fetchall()
+
+    return [_row_json_to_dict(r["data_json"]) for r in rows]
+
+
+def get_pending_reorders(db_path: str) -> List[Dict[str, Any]]:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT data_json FROM reorder_log WHERE status = ? ORDER BY timestamp DESC",
+            ("PENDING",),
+        ).fetchall()
+    return [_row_json_to_dict(r["data_json"]) for r in rows]
