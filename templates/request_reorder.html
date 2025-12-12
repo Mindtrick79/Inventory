@@ -1,27 +1,57 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Request Reorder</h2>
 
-<p><strong>Product:</strong> {{ product['Product Name'] }}</p>
-<p><strong>On Hand:</strong> {{ product['Quantity on Hand'] }}</p>
-<p><strong>Suggested Amount:</strong> {{ product['Reorder Amount'] }} {{ product['Reorder Quantity'] }}</p>
-<p><strong>Location:</strong> {{ product['Location'] }}</p>
-<p><strong>Vendor:</strong> {{ product['Distributor'] }}</p>
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Request Reorder</h2>
+    <div class="page-toolbar__subtitle">Submit a reorder request for a single product.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('products') }}">Back to Products</a>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__title">Product details</div>
+  <div class="summary-cards">
+    <div class="card">
+      <h4>Product</h4>
+      <p>{{ product['Product Name'] }}</p>
+    </div>
+    <div class="card">
+      <h4>On Hand</h4>
+      <p>{{ product['Quantity on Hand'] }}</p>
+    </div>
+    <div class="card">
+      <h4>Suggested</h4>
+      <p>{{ product['Reorder Amount'] }} {{ product['Reorder Quantity'] }}</p>
+    </div>
+    <div class="card">
+      <h4>Vendor</h4>
+      <p>{{ product['Distributor'] }}</p>
+    </div>
+  </div>
+</div>
 
 <form method="post">
-  <div>
-    <label for="order_amount">Order Amount</label>
-    <input type="number" step="any" min="0" id="order_amount" name="order_amount" value="{{ product['Reorder Amount'] }}" required>
-  </div>
+  <div class="form-card">
+    <div class="form-card__title">Request</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="order_amount">Order Amount</label>
+        <input type="number" step="any" min="0" id="order_amount" name="order_amount" value="{{ product['Reorder Amount'] }}" required>
+      </div>
 
-  <div>
-    <label for="notes">Notes (optional)</label>
-    <input type="text" id="notes" name="notes" placeholder="Truck #, urgency, etc.">
-  </div>
+      <div class="form-field form-field--span-12">
+        <label for="notes">Notes (optional)</label>
+        <input type="text" id="notes" name="notes" placeholder="Truck #, urgency, etc.">
+      </div>
+    </div>
 
-  <div>
-    <button type="submit">Submit Request</button>
-    <a href="{{ url_for('products') }}">Cancel</a>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">Submit Request</button>
+      <a class="btn btn--ghost" href="{{ url_for('products') }}">Cancel</a>
+    </div>
   </div>
 </form>
 {% endblock %}

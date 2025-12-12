@@ -1,25 +1,48 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Reorder</h2>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Reorder</h2>
+    <div class="page-toolbar__subtitle">Create reorder requests for low-stock items grouped by vendor.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('products') }}">View Products</a>
+    <a class="btn btn--secondary" href="{{ url_for('reorder_log') }}">Reorder Log</a>
+  </div>
+</div>
+
 {% if not grouped %}
-  <p>No low stock items to reorder.</p>
+  <div class="empty-state">
+    <div class="empty-state__title">No low stock items to reorder</div>
+    <div class="empty-state__hint">When items fall below the threshold, they’ll show up here grouped by vendor.</div>
+  </div>
 {% else %}
   <form method="post">
-    <div>
-      <label for="user">Your Name (for log)</label>
-      <input type="text" id="user" name="user" placeholder="Who is creating this reorder?">
-    </div>
+    <div class="form-card">
+      <div class="form-card__title">Reorder request details</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="user">Your Name (for log)</label>
+          <input type="text" id="user" name="user" placeholder="Who is creating this reorder?">
+        </div>
 
-    <div>
-      <label for="extra_cc">Additional CC Emails (comma-separated)</label>
-      <input type="text" id="extra_cc" name="extra_cc" placeholder="e.g. you@robertspest.com, office@robertspest.com">
+        <div class="form-field form-field--span-12">
+          <label for="extra_cc">Additional CC Emails (comma-separated)</label>
+          <input type="text" id="extra_cc" name="extra_cc" placeholder="e.g. you@robertspest.com, office@robertspest.com">
+        </div>
+      </div>
     </div>
 
     {% set vendor_index = 0 %}
     {% for vendor, items in grouped.items() %}
-      <section class="vendor-section">
-        <h3>Vendor: {{ vendor }}</h3>
+      <section class="vendor-section vendor-card">
+        <div class="vendor-card__header">
+          <div class="vendor-card__title">Vendor: {{ vendor }}</div>
+          <div class="vendor-card__hint">Select items and adjust order amounts.</div>
+        </div>
         <input type="hidden" name="vendor_{{ vendor_index }}" value="{{ vendor }}">
+        <div class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -59,12 +82,13 @@
             {% endfor %}
           </tbody>
         </table>
+        </div>
       </section>
       {% set vendor_index = vendor_index + 1 %}
     {% endfor %}
 
     <div class="form-actions">
-      <button type="submit">Create Reorder Requests</button>
+      <button class="btn btn--primary" type="submit">Create Reorder Requests</button>
     </div>
   </form>
 {% endif %}
