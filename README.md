@@ -2,6 +2,27 @@
 
 Internal inventory and reorder tool backed by the existing Excel workbook `Central Inventory Log (1).xlsx`.
 
+## Quick start (day-to-day)
+
+1) Open the site in a browser.
+
+- If you are on the same machine as the server: `http://localhost:8000`
+- If you are on the LAN: `http://<PI_IP>:8000`
+- If you need camera support on laptops/phones: `https://<PI_IP>/` (see HTTPS section below)
+
+2) Log in.
+
+- If you don’t have an account, request one (or ask an ADMIN).
+
+3) Use the top navigation:
+
+- **Dashboard**: overview + reporting widgets
+- **Products**: add/edit inventory items and photos
+- **Reorder**: create reorder requests
+- **Approvals**: approve/reject and send vendor PO emails (APPROVER/ADMIN)
+- **Reorder Log / Reorder Reports**: history + exports
+- **Settings** (ADMIN): company branding + email setup
+
 ## Dev setup (WSL)
 
 ```bash
@@ -109,6 +130,148 @@ Open the app at:
 
 - For quick testing you can proceed through the warning.
 - For a clean “no warning” experience, install/trust the Caddy local CA on each device.
+
+## User guide (step-by-step)
+
+### Roles
+
+- **VIEW**: can view dashboards, products, logs, reports
+- **REQUEST**: can create reorder requests and stock use entries
+- **APPROVER**: can approve/reject reorders and send vendor emails
+- **ADMIN**: can manage vendors/users/settings and everything above
+
+### Products (add/edit)
+
+1) Go to **Products**.
+2) To add a new item:
+
+- Click **Add Product**
+- Fill out:
+  - Product Name
+  - Quantity on Hand
+  - Container Unit (what the product is stored in)
+  - Reorder Threshold (when it becomes “low stock”)
+  - Reorder Amount (how much to request)
+  - Distributor (vendor)
+  - Optional: Cost Per Unit, Location, EPA numbers
+
+3) Add a product photo (optional):
+
+- **Upload**: choose a file using the file picker
+- **Phone/tablet**: tap the file picker and it should offer the camera
+- **Laptop/desktop**: click **Use Camera**
+  - If you see a message about HTTPS, open the site via `https://<PI_IP>/` (camera will not work over plain HTTP on most browsers)
+
+4) Click **Save**.
+
+### Reorder workflow (request → approval → vendor email)
+
+This is the standard business workflow.
+
+#### Step 1 — Create a reorder request (REQUEST/APPROVER/ADMIN)
+
+1) Go to **Reorder**.
+2) Review low-stock items grouped by vendor.
+3) Enter/confirm reorder quantities.
+4) Submit the request.
+
+This creates a **PENDING** row in the reorder log.
+
+#### Step 2 — Approve and send vendor PO email (APPROVER/ADMIN)
+
+1) Go to **Approvals**.
+2) Fill out the top form fields (these apply to the approval you click):
+
+- **Delivery Method**: SHIP or PICKUP
+- **PO Number**: your internal PO number for tracking
+- **Pickup By** (optional): who will pick it up
+- **Needed By** (optional): requested date
+- **Delivery / Pickup Notes** (optional)
+- **Notes to include in vendor email** (optional)
+- **Internal notes** (stored for reporting, not emailed)
+
+3) Click **Approve** on the row.
+
+Result:
+
+- The system attempts to email the vendor.
+- A formal **PDF Purchase Order** is generated and attached (if `fpdf2` is installed on the server).
+- The row status updates to:
+  - **SENT** if email succeeded
+  - **FAILED** if email failed
+
+If you click **Reject**, it marks the row **REJECTED**.
+
+### Purchase Orders (PDF)
+
+The PDF Purchase Order includes:
+
+- Your company name/address/phone/logo (from **Settings**)
+- Vendor name
+- Delivery method
+- PO Number
+- Pickup By (if provided)
+- Needed By + delivery notes (if provided)
+- Line-item table
+- Instructions footer (pickup vs ship)
+
+### Reorder Log (history)
+
+Go to **Reorder Log** to view all reorder events.
+
+You can download:
+
+- **Excel** export
+- **PDF** export
+
+### Reorder Reports (filters + exports)
+
+Go to **Reorder Reports** for business reporting.
+
+1) Set filters (date range, vendor, status, PO #, delivery method, pickup-by, approved-by).
+2) Review KPIs (totals, counts by status).
+3) Export what you’re looking at:
+
+- **Export Excel** (filtered)
+- **Export PDF** (filtered)
+
+### Settings (ADMIN)
+
+Go to **Settings** to configure:
+
+- Company branding for PDFs/emails (name/address/phone/logo)
+- Email SMTP settings (required to send vendor emails)
+- Purchase Order footer instructions (pickup vs ship)
+
+### Vendors (ADMIN)
+
+Go to **Vendors** to store:
+
+- Vendor email
+- CC emails
+- Vendor notes
+
+### Troubleshooting
+
+- **Camera says not supported**:
+  - Use `https://<PI_IP>/` (required for laptop/phone webcam support)
+  - Try Chrome/Edge/Firefox
+  - Verify the device has granted camera permissions
+
+- **Vendor email shows FAILED**:
+  - Verify **Settings → SMTP**
+  - Use the Settings “test email” action
+  - Confirm vendor email/CC fields in **Vendors**
+
+- **PDF not attached**:
+  - Install `fpdf2` on the server venv
+
+### Backups (recommended)
+
+- If using Excel backend: back up the Excel file regularly.
+- If using SQLite backend: back up the SQLite database file regularly.
+
+At minimum, copy the data file(s) to an external drive weekly.
 
 ## Excel expectations
 
