@@ -63,7 +63,12 @@
         {% endif %}
 
         {% if session.get('username') %}
-          <span class="nav-user">Logged in as {{ session['username'] }} ({{ role }})</span>
+          <span class="nav-user">
+            {% if session.get('photo_path') %}
+              <img src="{{ url_for('static', filename=session.get('photo_path')) }}" alt="Profile" class="nav-avatar">
+            {% endif %}
+            Logged in as {{ session['username'] }} ({{ role }})
+          </span>
           <a href="{{ url_for('logout') }}">Logout</a>
         {% else %}
           <a href="{{ url_for('login') }}">Login</a>
