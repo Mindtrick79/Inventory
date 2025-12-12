@@ -1,11 +1,21 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>User Management</h2>
-<p>Admin-only: manage application users, roles, and passwords.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>User Management</h2>
+    <div class="page-toolbar__subtitle">Admin-only: manage application users, roles, and passwords.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('account_requests_view') }}">Account Requests</a>
+    <a class="btn btn--secondary" href="{{ url_for('index') }}">Dashboard</a>
+  </div>
+</div>
 
 <section>
   <h3>Existing Users</h3>
   {% if users %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -24,7 +34,11 @@
       {% for u in users %}
       <tr>
         <td>{{ u.username }}</td>
-        <td>{{ u.role }}</td>
+        <td>
+          {% if u.role %}
+            <span class="status-badge status-{{ u.role }}">{{ u.role }}</span>
+          {% endif %}
+        </td>
         <td>{{ u.display_name }}</td>
         <td>{{ u.license_number }}</td>
         <td>
@@ -36,62 +50,71 @@
         <td>{{ u.email }}</td>
         <td>{{ u.default_truck }}</td>
         <td>
-          <button type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}', '{{ u.display_name }}', '{{ u.license_number }}', '{{ u.phone }}', '{{ u.email }}', '{{ u.default_truck }}')">Edit</button>
+          <button class="btn btn--secondary btn--sm" type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}', '{{ u.display_name }}', '{{ u.license_number }}', '{{ u.phone }}', '{{ u.email }}', '{{ u.default_truck }}')">Edit</button>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-    <p>No users found.</p>
+    <div class="empty-state">
+      <div class="empty-state__title">No users found</div>
+      <div class="empty-state__hint">Create the first user below.</div>
+    </div>
   {% endif %}
 </section>
 
 <section>
   <h3>Add / Update User</h3>
   <form method="post" enctype="multipart/form-data">
-    <div>
-      <label for="username">Username</label>
-      <input type="text" id="username" name="username" required>
-    </div>
-    <div>
-      <label for="display_name">Name</label>
-      <input type="text" id="display_name" name="display_name" placeholder="Technician name">
-    </div>
-    <div>
-      <label for="license_number">License #</label>
-      <input type="text" id="license_number" name="license_number" placeholder="State license number">
-    </div>
-    <div>
-      <label for="photo">Headshot Photo</label>
-      <input type="file" id="photo" name="photo" accept="image/*">
-    </div>
-    <div>
-      <label for="phone">Phone</label>
-      <input type="text" id="phone" name="phone" placeholder="Cell phone">
-    </div>
-    <div>
-      <label for="email">Email</label>
-      <input type="text" id="email" name="email" placeholder="Optional">
-    </div>
-    <div>
-      <label for="default_truck">Default Truck</label>
-      <input type="text" id="default_truck" name="default_truck" placeholder="Truck 1, Truck 2, etc.">
-    </div>
-    <div>
-      <label for="password">Password (leave blank to keep existing)</label>
-      <input type="password" id="password" name="password">
-    </div>
-    <div>
-      <label for="role">Role</label>
-      <select id="role" name="role">
-        {% for r in roles %}
-          <option value="{{ r }}">{{ r }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div>
-      <button type="submit">Save User</button>
+    <div class="form-card">
+      <div class="form-card__title">User details</div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-field">
+          <label for="display_name">Name</label>
+          <input type="text" id="display_name" name="display_name" placeholder="Technician name">
+        </div>
+        <div class="form-field">
+          <label for="license_number">License #</label>
+          <input type="text" id="license_number" name="license_number" placeholder="State license number">
+        </div>
+        <div class="form-field">
+          <label for="phone">Phone</label>
+          <input type="text" id="phone" name="phone" placeholder="Cell phone">
+        </div>
+        <div class="form-field">
+          <label for="email">Email</label>
+          <input type="text" id="email" name="email" placeholder="Optional">
+        </div>
+        <div class="form-field">
+          <label for="default_truck">Default Truck</label>
+          <input type="text" id="default_truck" name="default_truck" placeholder="Truck 1, Truck 2, etc.">
+        </div>
+        <div class="form-field">
+          <label for="role">Role</label>
+          <select id="role" name="role">
+            {% for r in roles %}
+              <option value="{{ r }}">{{ r }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="photo">Headshot Photo</label>
+          <input type="file" id="photo" name="photo" accept="image/*">
+        </div>
+        <div class="form-field">
+          <label for="password">Password (leave blank to keep existing)</label>
+          <input type="password" id="password" name="password">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit">Save User</button>
+      </div>
     </div>
   </form>
 </section>

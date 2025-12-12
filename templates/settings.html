@@ -1,77 +1,106 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Settings</h2>
-<p>Application configuration. (Intended for admin users.)</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Settings</h2>
+    <div class="page-toolbar__subtitle">Application configuration (admin only).</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('index') }}">Dashboard</a>
+  </div>
+</div>
 
 <form method="post" enctype="multipart/form-data">
-  <div>
-    <label for="company_name">Company / App Name</label>
-    <input type="text" id="company_name" name="company_name" value="{{ settings.company_name }}">
+
+  <div class="form-card">
+    <div class="form-card__title">Company & Email Defaults</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="company_name">Company / App Name</label>
+        <input type="text" id="company_name" name="company_name" value="{{ settings.company_name }}">
+      </div>
+
+      <div class="form-field">
+        <label for="company_phone">Company Phone</label>
+        <input type="text" id="company_phone" name="company_phone" value="{{ settings.company_phone }}">
+      </div>
+
+      <div class="form-field form-field--span-12">
+        <label for="company_address">Company Address</label>
+        <textarea id="company_address" name="company_address" rows="2">{{ settings.company_address }}</textarea>
+      </div>
+
+      <div class="form-field">
+        <label for="email_subject_prefix">Email Subject Prefix</label>
+        <input type="text" id="email_subject_prefix" name="email_subject_prefix" value="{{ settings.email_subject_prefix }}">
+      </div>
+
+      <div class="form-field form-field--span-12">
+        <label for="default_email_cc">Default Email CCs (comma-separated)</label>
+        <input type="text" id="default_email_cc" name="default_email_cc" value="{{ settings.default_email_cc }}">
+      </div>
+
+      <div class="form-field form-field--span-12">
+        <label for="email_footer">Email Footer</label>
+        <textarea id="email_footer" name="email_footer" rows="3">{{ settings.email_footer }}</textarea>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <label for="company_address">Company Address</label>
-    <textarea id="company_address" name="company_address" rows="2">{{ settings.company_address }}</textarea>
+  <div class="form-card">
+    <div class="form-card__title">Purchase Order Footer</div>
+    <div class="form-grid">
+      <div class="form-field form-field--span-12">
+        <label for="po_footer_pickup">Purchase Order Footer (Pickup)</label>
+        <textarea id="po_footer_pickup" name="po_footer_pickup" rows="3">{{ settings.po_footer_pickup }}</textarea>
+      </div>
+
+      <div class="form-field form-field--span-12">
+        <label for="po_footer_ship">Purchase Order Footer (Ship)</label>
+        <textarea id="po_footer_ship" name="po_footer_ship" rows="3">{{ settings.po_footer_ship }}</textarea>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <label for="company_phone">Company Phone</label>
-    <input type="text" id="company_phone" name="company_phone" value="{{ settings.company_phone }}">
-  </div>
+  <div class="form-card">
+    <div class="form-card__title">Notifications</div>
+    <div class="form-grid">
+      <div class="form-field form-field--span-12">
+        <label for="stock_use_notify_emails">Stock Use Notification Emails (comma-separated)</label>
+        <input type="text" id="stock_use_notify_emails" name="stock_use_notify_emails" value="{{ settings.stock_use_notify_emails }}" placeholder="inventory@example.com, manager@example.com">
+      </div>
 
-  <div>
-    <label for="email_subject_prefix">Email Subject Prefix</label>
-    <input type="text" id="email_subject_prefix" name="email_subject_prefix" value="{{ settings.email_subject_prefix }}">
-  </div>
+      <div class="form-field">
+        <label for="checkout_email_to">Checkout Email To</label>
+        <input type="email" id="checkout_email_to" name="checkout_email_to" value="{{ settings.checkout_email_to }}" placeholder="office@robertspest.com">
+      </div>
 
-  <div>
-    <label for="default_email_cc">Default Email CCs (comma-separated)</label>
-    <input type="text" id="default_email_cc" name="default_email_cc" value="{{ settings.default_email_cc }}">
-  </div>
-
-  <div>
-    <label for="email_footer">Email Footer</label>
-    <textarea id="email_footer" name="email_footer" rows="3">{{ settings.email_footer }}</textarea>
-  </div>
-
-  <div>
-    <label for="po_footer_pickup">Purchase Order Footer (Pickup)</label>
-    <textarea id="po_footer_pickup" name="po_footer_pickup" rows="3">{{ settings.po_footer_pickup }}</textarea>
-  </div>
-
-  <div>
-    <label for="po_footer_ship">Purchase Order Footer (Ship)</label>
-    <textarea id="po_footer_ship" name="po_footer_ship" rows="3">{{ settings.po_footer_ship }}</textarea>
-  </div>
-
-  <div>
-    <label for="stock_use_notify_emails">Stock Use Notification Emails (comma-separated)</label>
-    <input type="text" id="stock_use_notify_emails" name="stock_use_notify_emails" value="{{ settings.stock_use_notify_emails }}" placeholder="inventory@example.com, manager@example.com">
-  </div>
-
-  <div>
-    <label for="checkout_email_to">Checkout Email To</label>
-    <input type="email" id="checkout_email_to" name="checkout_email_to" value="{{ settings.checkout_email_to }}" placeholder="office@robertspest.com">
-  </div>
-
-  <div>
-    <label for="checkout_email_cc">Checkout Email CC (comma-separated)</label>
-    <input type="text" id="checkout_email_cc" name="checkout_email_cc" value="{{ settings.checkout_email_cc }}" placeholder="manager@robertspest.com, owner@robertspest.com">
+      <div class="form-field form-field--span-12">
+        <label for="checkout_email_cc">Checkout Email CC (comma-separated)</label>
+        <input type="text" id="checkout_email_cc" name="checkout_email_cc" value="{{ settings.checkout_email_cc }}" placeholder="manager@robertspest.com, owner@robertspest.com">
+      </div>
+    </div>
   </div>
 
   <hr>
 
   <h3>Branding</h3>
 
-  <div>
-    <label for="company_logo">Company Logo (PNG/JPEG)</label>
-    <input type="file" id="company_logo" name="company_logo" accept="image/*">
-    {% if settings.company_logo_path %}
-      <div class="current-logo">
-        <p>Current logo:</p>
-        <img src="{{ url_for('static', filename=settings.company_logo_path) }}" alt="Company Logo" style="max-height: 60px;">
+  <div class="form-card">
+    <div class="form-card__title">Branding</div>
+    <div class="form-grid">
+      <div class="form-field form-field--span-12">
+        <label for="company_logo">Company Logo (PNG/JPEG)</label>
+        <input type="file" id="company_logo" name="company_logo" accept="image/*">
+        {% if settings.company_logo_path %}
+          <div class="current-logo">
+            <p>Current logo:</p>
+            <img src="{{ url_for('static', filename=settings.company_logo_path) }}" alt="Company Logo" style="max-height: 60px;">
+          </div>
+        {% endif %}
       </div>
-    {% endif %}
+    </div>
   </div>
 
   <hr>
@@ -95,51 +124,56 @@ Sample email body...
 
   <h3>Email / SMTP Setup</h3>
 
-  <div>
-    <label for="smtp_provider">Email Provider</label>
-    <select id="smtp_provider" name="smtp_provider">
-      {% set provider = settings.smtp_provider or 'bluehost' %}
-      <option value="bluehost" {% if provider == 'bluehost' %}selected{% endif %}>Bluehost / cPanel host</option>
-      <option value="gmail" {% if provider == 'gmail' %}selected{% endif %}>Gmail / Google Workspace</option>
-      <option value="office365" {% if provider == 'office365' %}selected{% endif %}>Office 365 / Outlook</option>
-      <option value="other" {% if provider == 'other' %}selected{% endif %}>Other (custom)</option>
-    </select>
-  </div>
+  <div class="form-card">
+    <div class="form-card__title">Email / SMTP Setup</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="smtp_provider">Email Provider</label>
+        <select id="smtp_provider" name="smtp_provider">
+          {% set provider = settings.smtp_provider or 'bluehost' %}
+          <option value="bluehost" {% if provider == 'bluehost' %}selected{% endif %}>Bluehost / cPanel host</option>
+          <option value="gmail" {% if provider == 'gmail' %}selected{% endif %}>Gmail / Google Workspace</option>
+          <option value="office365" {% if provider == 'office365' %}selected{% endif %}>Office 365 / Outlook</option>
+          <option value="other" {% if provider == 'other' %}selected{% endif %}>Other (custom)</option>
+        </select>
+      </div>
 
-  <div>
-    <label for="from_email">From Email Address</label>
-    <input type="email" id="from_email" name="from_email" value="{{ settings.from_email }}" placeholder="orders@yourdomain.com">
-  </div>
+      <div class="form-field">
+        <label for="from_email">From Email Address</label>
+        <input type="email" id="from_email" name="from_email" value="{{ settings.from_email }}" placeholder="orders@yourdomain.com">
+      </div>
 
-  <div>
-    <label for="smtp_host">SMTP Host</label>
-    <input type="text" id="smtp_host" name="smtp_host" value="{{ settings.smtp_host }}" placeholder="{{ suggested_smtp_host or 'mail.yourdomain.com' }}">
-  </div>
+      <div class="form-field">
+        <label for="smtp_host">SMTP Host</label>
+        <input type="text" id="smtp_host" name="smtp_host" value="{{ settings.smtp_host }}" placeholder="{{ suggested_smtp_host or 'mail.yourdomain.com' }}">
+      </div>
 
-  <div>
-    <label for="smtp_port">SMTP Port</label>
-    <input type="number" id="smtp_port" name="smtp_port" value="{{ settings.smtp_port }}" min="1">
-  </div>
+      <div class="form-field">
+        <label for="smtp_port">SMTP Port</label>
+        <input type="number" id="smtp_port" name="smtp_port" value="{{ settings.smtp_port }}" min="1">
+      </div>
 
-  <div>
-    <label for="smtp_user">SMTP Username</label>
-    <input type="text" id="smtp_user" name="smtp_user" value="{{ settings.smtp_user }}" placeholder="Usually the full email address">
-  </div>
+      <div class="form-field">
+        <label for="smtp_user">SMTP Username</label>
+        <input type="text" id="smtp_user" name="smtp_user" value="{{ settings.smtp_user }}" placeholder="Usually the full email address">
+      </div>
 
-  <div>
-    <label for="smtp_pass">SMTP Password</label>
-    <input type="password" id="smtp_pass" name="smtp_pass" placeholder="Leave blank to keep existing">
-  </div>
+      <div class="form-field">
+        <label for="smtp_pass">SMTP Password</label>
+        <input type="password" id="smtp_pass" name="smtp_pass" placeholder="Leave blank to keep existing">
+      </div>
 
-  <div>
-    <label for="smtp_use_tls">Use TLS (recommended)</label>
-    <input type="checkbox" id="smtp_use_tls" name="smtp_use_tls" value="1" {% if settings.smtp_use_tls %}checked{% endif %}>
-  </div>
+      <div class="form-field">
+        <label for="smtp_use_tls">Use TLS (recommended)</label>
+        <input type="checkbox" id="smtp_use_tls" name="smtp_use_tls" value="1" {% if settings.smtp_use_tls %}checked{% endif %}>
+      </div>
+    </div>
 
-  <div class="form-actions">
-    <button type="submit" name="action" value="save">Save Settings</button>
-    <button type="submit" name="action" value="autodetect">Auto-Detect SMTP from Email</button>
-    <button type="submit" name="action" value="test">Send Test Email</button>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit" name="action" value="save">Save Settings</button>
+      <button class="btn btn--secondary" type="submit" name="action" value="autodetect">Auto-Detect SMTP from Email</button>
+      <button class="btn btn--secondary" type="submit" name="action" value="test">Send Test Email</button>
+    </div>
   </div>
 </form>
 {% endblock %}

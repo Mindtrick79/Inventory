@@ -1,9 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Account Requests</h2>
-<p>Admin-only view of pending account requests submitted via the Request Account form.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Account Requests</h2>
+    <div class="page-toolbar__subtitle">Admin-only view of pending account requests submitted via the Request Account form.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('manage_users') }}">Manage Users</a>
+  </div>
+</div>
 
 {% if requests %}
+<div class="table-wrap">
 <table>
   <thead>
     <tr>
@@ -24,8 +33,12 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 {% else %}
-<p>No account requests found.</p>
+<div class="empty-state">
+  <div class="empty-state__title">No account requests found</div>
+  <div class="empty-state__hint">When someone requests access, it will appear here.</div>
+</div>
 {% endif %}
 
 <p>
