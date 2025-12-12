@@ -92,6 +92,7 @@ Restart the server after changing env vars.
 In the app UI (ADMIN) on the **Database** page:
 
 - **Download Workbook (Excel)**: exports Products/Vendors/Reorder Log as a multi-sheet `.xlsx`
+- **SQLite → Excel (Round-trip)**: exports `Master Inventory`, `Vendors`, `Reorder Log`, and `All Transactions` as a workbook
 - **Download Snapshot (PDF)**: quick printable snapshot (requires `fpdf2`)
 
 ### Safety notes
@@ -109,6 +110,10 @@ Recommended env vars (example):
 
 ```bash
 export INVENTORY_XLSX_PATH="/home/charlie/xdrive/Central Inventory Log (1).xlsx"
+
+# Recommended when using SQLite backend
+export INVENTORY_DB_PATH="/home/pi/RobertsInventory/inventory.db"
+export INVENTORY_BACKEND=sqlite
 
 export SMTP_HOST="smtp.gmail.com"
 export SMTP_PORT=587
