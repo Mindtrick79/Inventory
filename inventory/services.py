@@ -26,6 +26,14 @@ def load_settings() -> Dict[str, Any]:
         "default_email_cc": "",
         "email_footer": "",
         "stock_use_notify_emails": "",
+        # Email transport configuration; if left blank, falls back to config.py
+        "smtp_provider": "bluehost",  # for future presets
+        "smtp_host": "",
+        "smtp_port": SMTP_PORT,
+        "smtp_user": "",
+        "smtp_pass": "",
+        "smtp_use_tls": True,
+        "from_email": FROM_EMAIL,
     }
     if not os.path.exists(SETTINGS_PATH):
         return defaults
@@ -45,6 +53,60 @@ def save_settings(settings: Dict[str, Any]) -> None:
     except Exception:
         # Non-fatal; ignore write errors for now.
         pass
+
+
+def _resolve_smtp_config(settings: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Return SMTP configuration using settings.json with config.py as fallback."""
+
+    if settings is None:
+        settings = load_settings()
+
+    host = settings.get("smtp_host") or SMTP_HOST
+    try:
+        port = int(settings.get("smtp_port", SMTP_PORT) or SMTP_PORT)
+    except (TypeError, ValueError):
+        port = SMTP_PORT
+
+    user = settings.get("smtp_user") or SMTP_USER
+    password = settings.get("smtp_pass") or SMTP_PASS
+    from_email = settings.get("from_email") or FROM_EMAIL
+    use_tls = bool(settings.get("smtp_use_tls", True))
+
+    return {
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": password,
+        "from_email": from_email,
+        "use_tls": use_tls,
+    }
+
+
+def send_basic_email(subject: str, body: str, to_addresses: List[str]) -> bool:
+    """Send a simple text email using the SMTP settings.
+
+    Used by various flows (stock use notifications, tests, etc.).
+    """
+
+    settings = load_settings()
+    smtp_cfg = _resolve_smtp_config(settings)
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = smtp_cfg["from_email"]
+    msg["To"] = ", ".join(to_addresses)
+    msg.set_content(body)
+
+    try:
+        with smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"]) as server:
+            if smtp_cfg["use_tls"]:
+                server.starttls()
+            if smtp_cfg["user"] and smtp_cfg["password"] and smtp_cfg["password"] != "CHANGE_ME":
+                server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.send_message(msg, from_addr=smtp_cfg["from_email"], to_addrs=to_addresses)
+        return True
+    except Exception:
+        return False
 
 
 def get_all_products() -> List[Dict[str, Any]]:
@@ -266,6 +328,7 @@ def send_reorder_email(
         return False
 
     settings = load_settings()
+    smtp_cfg = _resolve_smtp_config(settings)
     prefix = settings.get("email_subject_prefix", "Reorder Request - ")
     default_cc_raw = settings.get("default_email_cc", "")
     default_cc = [e.strip() for e in str(default_cc_raw).split(",") if e.strip()]
@@ -291,7 +354,7 @@ def send_reorder_email(
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = FROM_EMAIL
+    msg["From"] = smtp_cfg["from_email"]
     msg["To"] = to_email
     if cc_emails:
         msg["Cc"] = ", ".join(cc_emails)
@@ -301,11 +364,12 @@ def send_reorder_email(
     recipients = [to_email] + cc_emails + default_cc + extra_cc
 
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            if SMTP_USER and SMTP_PASS and SMTP_PASS != "CHANGE_ME":
-                server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg, from_addr=FROM_EMAIL, to_addrs=recipients)
+        with smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"]) as server:
+            if smtp_cfg["use_tls"]:
+                server.starttls()
+            if smtp_cfg["user"] and smtp_cfg["password"] and smtp_cfg["password"] != "CHANGE_ME":
+                server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.send_message(msg, from_addr=smtp_cfg["from_email"], to_addrs=recipients)
         return True
     except Exception:
         # For now, swallow and signal failure; web UI can show FAILED status.
@@ -477,6 +541,7 @@ def send_pricing_request_email(
         return False
 
     settings = load_settings()
+    smtp_cfg = _resolve_smtp_config(settings)
     # Reuse email_subject_prefix but clarify this is a pricing request
     prefix = settings.get("email_subject_prefix", "Reorder Request - ")
     subject = f"Pricing Request - {vendor}"
@@ -524,11 +589,12 @@ def send_pricing_request_email(
     recipients = [to_email] + cc_emails + default_cc + extra_cc
 
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-            server.starttls()
-            if SMTP_USER and SMTP_PASS and SMTP_PASS != "CHANGE_ME":
-                server.login(SMTP_USER, SMTP_PASS)
-            server.send_message(msg, from_addr=FROM_EMAIL, to_addrs=recipients)
+        with smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"]) as server:
+            if smtp_cfg["use_tls"]:
+                server.starttls()
+            if smtp_cfg["user"] and smtp_cfg["password"] and smtp_cfg["password"] != "CHANGE_ME":
+                server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.send_message(msg, from_addr=smtp_cfg["from_email"], to_addrs=recipients)
         return True
     except Exception:
         return False

@@ -28,6 +28,7 @@ from inventory.services import (
     get_distinct_product_values,
     rename_product_value,
     adjust_product_quantity,
+    send_basic_email,
 )
 
 
@@ -617,19 +618,11 @@ def create_app():
                             f"New Quantity: {result['new_quantity']}",
                         ]
                         body = "\n".join(body_lines)
-                        msg = f"Subject: {subject}\nFrom: {FROM_EMAIL}\nTo: {', '.join(notify_list)}\n\n{body}"
 
-                        try:
-                            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-                                server.starttls()
-                                if SMTP_USER and SMTP_PASS and SMTP_PASS != "CHANGE_ME":
-                                    server.login(SMTP_USER, SMTP_PASS)
-                                server.sendmail(FROM_EMAIL, notify_list, msg)
-                        except Exception:
-                            # Non-fatal, we still adjusted quantity and logged tx
-                            flash("Stock use recorded, but email notification failed.", "warning")
-                        else:
+                        if send_basic_email(subject, body, notify_list):
                             flash("Stock use recorded and notification sent.", "success")
+                        else:
+                            flash("Stock use recorded, but email notification failed.", "warning")
                     else:
                         flash("Stock use recorded.", "success")
 
@@ -686,18 +679,58 @@ def create_app():
     def settings_view():
         if request.method == "POST":
             current = app.config["APP_SETTINGS"].copy()
+            action = request.form.get("action", "save")
             current["company_name"] = request.form.get("company_name", current.get("company_name", ""))
             current["email_subject_prefix"] = request.form.get("email_subject_prefix", current.get("email_subject_prefix", ""))
             current["default_email_cc"] = request.form.get("default_email_cc", current.get("default_email_cc", ""))
             current["email_footer"] = request.form.get("email_footer", current.get("email_footer", ""))
             current["stock_use_notify_emails"] = request.form.get("stock_use_notify_emails", current.get("stock_use_notify_emails", ""))
 
+            current["smtp_provider"] = request.form.get("smtp_provider", current.get("smtp_provider", "bluehost"))
+            current["from_email"] = request.form.get("from_email", current.get("from_email", "")).strip()
+            current["smtp_host"] = request.form.get("smtp_host", current.get("smtp_host", "")).strip()
+            smtp_port_raw = request.form.get("smtp_port", current.get("smtp_port", ""))
+            try:
+                current["smtp_port"] = int(smtp_port_raw or current.get("smtp_port", 0) or SMTP_PORT)
+            except (TypeError, ValueError):
+                current["smtp_port"] = SMTP_PORT
+            current["smtp_user"] = request.form.get("smtp_user", current.get("smtp_user", "")).strip()
+            # Do not strip if empty; keep existing if not provided to avoid wiping by mistake
+            new_pass = request.form.get("smtp_pass", "")
+            if new_pass:
+                current["smtp_pass"] = new_pass
+            current["smtp_use_tls"] = bool(request.form.get("smtp_use_tls") or current.get("smtp_use_tls", True))
+
             save_settings(current)
             app.config["APP_SETTINGS"] = current
+
+            if action == "test":
+                test_recipient = current.get("from_email") or current.get("default_email_cc", "")
+                recipients = [e.strip() for e in str(test_recipient).split(",") if e.strip()]
+                if not recipients:
+                    flash("Configure From Email or a default CC before sending a test.", "warning")
+                else:
+                    ok = send_basic_email("Test email from Roberts Inventory Manager", "This is a test message.", recipients)
+                    if ok:
+                        flash("Test email sent successfully.", "success")
+                    else:
+                        flash("Failed to send test email. Check SMTP settings.", "danger")
+                return redirect(url_for("settings_view"))
+
             flash("Settings saved.", "success")
             return redirect(url_for("settings_view"))
 
-        return render_template("settings.html", settings=app.config["APP_SETTINGS"])
+        settings = app.config["APP_SETTINGS"]
+        suggested_host = ""
+        if (not settings.get("smtp_host")) and settings.get("from_email"):
+            # Very simple preset: assume mail.<domain> for providers like Bluehost
+            try:
+                domain = settings["from_email"].split("@", 1)[1]
+                suggested_host = f"mail.{domain}"
+            except Exception:
+                suggested_host = ""
+
+        return render_template("settings.html", settings=settings, suggested_smtp_host=suggested_host)
 
     @app.route("/units", methods=["GET", "POST"])
     @login_required("ADMIN")
