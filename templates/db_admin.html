@@ -13,6 +13,8 @@
   <form method="post" class="form-actions">
     <button class="btn btn--primary" type="submit" name="action" value="init">Initialize SQLite DB</button>
     <button class="btn btn--secondary" type="submit" name="action" value="import">Import Excel → SQLite</button>
+    <a class="btn btn--secondary" href="{{ url_for('export_workbook_xlsx') }}">Download Workbook (Excel)</a>
+    <a class="btn btn--secondary" href="{{ url_for('export_snapshot_pdf') }}">Download Snapshot (PDF)</a>
   </form>
 </div>
 

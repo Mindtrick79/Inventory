@@ -364,13 +364,14 @@ def create_app():
             action = request.form.get("action", "").strip()
             if action == "init":
                 sqlite_init_db(DB_PATH)
-                flash("SQLite database initialized.", "success")
+                flash("SQLite DB initialized.", "success")
             elif action == "import":
-                counts = sqlite_import_from_excel(DB_PATH)
-                flash(
-                    f"Imported Excel → SQLite. Products={counts.get('products', 0)}, Vendors={counts.get('vendors', 0)}, Reorders={counts.get('reorders', 0)}, Transactions={counts.get('transactions', 0)}",
-                    "success",
-                )
+                sqlite_init_db(DB_PATH)
+                ok = sqlite_import_from_excel(DB_PATH)
+                if ok:
+                    flash("Imported Excel → SQLite.", "success")
+                else:
+                    flash("Import failed.", "danger")
             else:
                 flash("Unknown database action.", "warning")
             return redirect(url_for("db_admin"))
@@ -386,6 +387,114 @@ def create_app():
             db_path=DB_PATH,
             counts=counts,
         )
+
+
+    @app.route("/exports/workbook.xlsx")
+    @login_required("ADMIN")
+    def export_workbook_xlsx():
+        products = get_all_products()
+        vendors = get_all_vendors()
+        reorder_rows = get_reorder_log()
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            pd.DataFrame(products).to_excel(writer, sheet_name="Products", index=False)
+            pd.DataFrame(vendors).to_excel(writer, sheet_name="Vendors", index=False)
+            pd.DataFrame(reorder_rows).to_excel(writer, sheet_name="Reorder Log", index=False)
+        output.seek(0)
+
+        fname = f"inventory_export_{datetime.utcnow().date().isoformat()}.xlsx"
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=fname,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+
+    @app.route("/exports/snapshot.pdf")
+    @login_required("ADMIN")
+    def export_snapshot_pdf():
+        try:
+            from fpdf import FPDF
+        except Exception:
+            flash("PDF export requires the fpdf2 package. Install it in the server venv.", "warning")
+            return redirect(url_for("db_admin"))
+
+        settings = app.config.get("APP_SETTINGS") or {}
+        products = get_all_products()
+        vendors = get_all_vendors()
+        reorder_rows = get_reorder_log()
+
+        pdf = FPDF(orientation="P", unit="mm", format="Letter")
+        pdf.set_auto_page_break(auto=True, margin=12)
+        pdf.add_page()
+
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.cell(0, 8, "Inventory Snapshot", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 6, f"Generated: {datetime.utcnow().isoformat()}Z", ln=True)
+        company = str(settings.get("company_name") or "").strip()
+        if company:
+            pdf.cell(0, 6, f"Company: {company}", ln=True)
+        pdf.ln(2)
+
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 7, "Counts", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 6, f"Products: {len(products)}", ln=True)
+        pdf.cell(0, 6, f"Vendors: {len(vendors)}", ln=True)
+        pdf.cell(0, 6, f"Reorder Log rows: {len(reorder_rows)}", ln=True)
+        pdf.ln(2)
+
+        def _table(title: str, rows: list[dict], columns: list[str], widths: list[int], max_rows: int) -> None:
+            pdf.set_font("Helvetica", "B", 11)
+            pdf.cell(0, 7, title, ln=True)
+            pdf.set_font("Helvetica", "B", 8)
+            for c, w in zip(columns, widths):
+                pdf.cell(w, 6, c, border=1)
+            pdf.ln()
+            pdf.set_font("Helvetica", "", 8)
+            for r in rows[:max_rows]:
+                for c, w in zip(columns, widths):
+                    v = str(r.get(c, "") or "").replace("\r", " ").replace("\n", " ")
+                    if len(v) > 70:
+                        v = v[:67] + "..."
+                    pdf.cell(w, 6, v, border=1)
+                pdf.ln()
+            pdf.ln(3)
+
+        # Low stock quick view
+        try:
+            low = get_low_stock_products()
+        except Exception:
+            low = []
+        _table(
+            title=f"Low Stock (top {min(25, len(low))})",
+            rows=low,
+            columns=["Product Name", "Distributor", "Quantity on Hand", "Reorder Threshold"],
+            widths=[70, 45, 35, 35],
+            max_rows=25,
+        )
+
+        # Recent reorder log
+        recent = sorted(reorder_rows, key=lambda r: str(r.get("Timestamp", "")), reverse=True)
+        _table(
+            title="Recent Reorder Log (top 20)",
+            rows=recent,
+            columns=["Timestamp", "Vendor", "Status", "Approved By"],
+            widths=[55, 55, 30, 40],
+            max_rows=20,
+        )
+
+        data = pdf.output(dest="S")
+        if isinstance(data, str):
+            data = data.encode("latin-1")
+        output = io.BytesIO(data)
+        output.seek(0)
+
+        fname = f"inventory_snapshot_{datetime.utcnow().date().isoformat()}.pdf"
+        return send_file(output, as_attachment=True, download_name=fname, mimetype="application/pdf")
 
     @app.route("/logout")
     def logout():
