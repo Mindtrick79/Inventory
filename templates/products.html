@@ -29,6 +29,8 @@
       <th>Distributor</th>
       <th>Location</th>
       <th>Cost Per Unit</th>
+      <th>EPA Reg #</th>
+      <th>EPA Est #</th>
       <th>Actions</th>
     </tr>
   </thead>
@@ -54,6 +56,8 @@
       <td>{{ p['Distributor'] }}</td>
       <td>{{ p['Location'] }}</td>
       <td>{{ p['Cost Per Unit'] }}</td>
+      <td>{{ p.get('EPA Registration Number', '') }}</td>
+      <td>{{ p.get('EPA Establishment Number', '') }}</td>
       <td>
         {% if role == 'ADMIN' %}
           <a href="{{ url_for('edit_product', product_name=p['Product Name']) }}">Edit</a>

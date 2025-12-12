@@ -86,6 +86,16 @@
   </div>
 
   <div>
+    <label for="epa_reg_no">EPA Registration Number</label>
+    <input type="text" id="epa_reg_no" name="epa_reg_no" value="{{ product.get('EPA Registration Number','') }}" placeholder="e.g. 12345-678">
+  </div>
+
+  <div>
+    <label for="epa_est_no">EPA Establishment Number</label>
+    <input type="text" id="epa_est_no" name="epa_est_no" value="{{ product.get('EPA Establishment Number','') }}" placeholder="e.g. 98765-TX-1">
+  </div>
+
+  <div>
     <label for="product_image">Product Image (optional)</label>
     {% if product.get('Image Path') %}
       <div style="margin-bottom:0.5rem;">

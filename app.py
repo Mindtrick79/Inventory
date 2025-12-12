@@ -472,6 +472,8 @@ def create_app():
                 "Distributor": _resolve_select("distributor"),
                 "Location": form.get("location", "").strip(),
                 "Cost Per Unit": form.get("cost_per_unit", "").strip(),
+                "EPA Registration Number": form.get("epa_reg_no", "").strip(),
+                "EPA Establishment Number": form.get("epa_est_no", "").strip(),
             }
 
             image_file = request.files.get("product_image")
@@ -545,6 +547,8 @@ def create_app():
                 "Distributor": _resolve_select("distributor", existing.get("Distributor", "")),
                 "Location": form.get("location", existing.get("Location", "")).strip(),
                 "Cost Per Unit": form.get("cost_per_unit", existing.get("Cost Per Unit", "")).strip(),
+                "EPA Registration Number": form.get("epa_reg_no", existing.get("EPA Registration Number", "")).strip(),
+                "EPA Establishment Number": form.get("epa_est_no", existing.get("EPA Establishment Number", "")).strip(),
             }
 
             image_file = request.files.get("product_image")
