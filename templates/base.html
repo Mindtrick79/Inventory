@@ -117,5 +117,30 @@
         });
       })();
     </script>
+
+    <script>
+      (function() {
+        document.addEventListener('submit', function(e) {
+          var form = e.target;
+          if (!form || !form.querySelectorAll) return;
+
+          var buttons = form.querySelectorAll('button[type="submit"], input[type="submit"]');
+          buttons.forEach(function(b) {
+            if (b.disabled) return;
+            b.disabled = true;
+            try { b.setAttribute('aria-busy', 'true'); } catch (err) {}
+            if (b.tagName && b.tagName.toLowerCase() === 'button') {
+              if (!b.dataset.originalText) {
+                b.dataset.originalText = b.textContent || '';
+              }
+              if (!b.dataset.loadingText) {
+                b.dataset.loadingText = 'Working...';
+              }
+              b.textContent = b.dataset.loadingText;
+            }
+          });
+        }, true);
+      })();
+    </script>
   </body>
 </html>
