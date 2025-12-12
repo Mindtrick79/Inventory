@@ -12,6 +12,9 @@
   --color-button-hover-bg: #173958;
   --color-button-text: #ffffff;
   --font-base: Arial, sans-serif;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 18px 40px rgba(0, 0, 0, 0.18);
 }
 
 body {
@@ -32,6 +35,11 @@ header {
   color: var(--color-header-text);
   padding: 1rem;
   min-height: var(--header-height, auto);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: saturate(140%) blur(8px);
 }
 
 header h1 {
@@ -42,10 +50,20 @@ nav a {
   color: var(--color-nav-link);
   margin-right: 1rem;
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  transition: background-color 120ms ease, transform 80ms ease;
 }
 
 nav a:hover {
-  text-decoration: underline;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+nav a:active {
+  transform: translateY(1px);
 }
 
 .nav-user {
@@ -65,6 +83,16 @@ nav a:hover {
 
 main {
   padding: calc(1.5rem * var(--spacing-scale, 1));
+}
+
+h2 {
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+section {
+  margin-top: 1.25rem;
 }
 
 label {
@@ -110,6 +138,7 @@ table {
   color: var(--color-text);
   border-radius: var(--radius, 6px);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 th,
@@ -132,8 +161,20 @@ tr:hover {
   background-color: var(--color-table-row-hover);
 }
 
+tbody tr {
+  transition: transform 80ms ease, background-color 120ms ease;
+}
+
+tbody tr:hover {
+  transform: translateY(-1px);
+}
+
 .vendor-section {
   margin-top: 1.5rem;
+}
+
+.vendor-section h3 {
+  margin: 0.75rem 0;
 }
 
 .form-actions {
@@ -164,8 +205,8 @@ a.button-link {
   text-decoration: none;
   font-weight: 700;
   letter-spacing: 0.01em;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
-  transition: background-color 120ms ease, transform 80ms ease, box-shadow 120ms ease, filter 120ms ease;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 140ms ease, transform 120ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
 
 button:hover,
@@ -173,21 +214,22 @@ button:hover,
 a.button-link:hover {
   background-color: var(--color-button-hover-bg);
   text-decoration: none;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 button:active,
 .button-link:active,
 a.button-link:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+  transform: translateY(0px) scale(0.99);
+  box-shadow: var(--shadow-sm);
 }
 
 button:focus-visible,
 .button-link:focus-visible,
 a.button-link:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.25), 0 1px 2px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.28), var(--shadow-sm);
 }
 
 button[disabled],
@@ -209,6 +251,54 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+/* Page toolbars (top-of-page action rows) */
+.page-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.6rem * var(--spacing-scale, 1));
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.75rem 0 0.25rem 0;
+  padding: calc(0.65rem * var(--spacing-scale, 1)) calc(0.8rem * var(--spacing-scale, 1));
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  border-radius: var(--radius, 10px);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: saturate(140%) blur(8px);
+}
+
+.page-toolbar .page-toolbar-left,
+.page-toolbar .page-toolbar-right {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: calc(0.5rem * var(--spacing-scale, 1));
+  align-items: center;
+}
+
+/* Action links inside tables (Edit/Request/etc.) */
+main table a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.70);
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 0.82rem;
+  box-shadow: none;
+  margin-right: 0.4rem;
+  transition: transform 120ms ease, background-color 120ms ease, box-shadow 160ms ease;
+}
+
+main table a:hover {
+  background: rgba(255, 255, 255, 0.95);
+  text-decoration: none;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .search-form {
@@ -266,6 +356,7 @@ a:hover {
   padding: 0.5rem 0.75rem;
   border-radius: 3px;
   margin-bottom: 0.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .flash-success {
@@ -289,11 +380,15 @@ a:hover {
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: bold;
+  border: 1px solid rgba(0, 0, 0, 0.10);
+  box-shadow: var(--shadow-sm);
+  transform: translateZ(0);
 }
 
 .status-PENDING {
   background-color: #fff4e5;
   color: #8a5a00;
+  animation: statusPulse 1.6s ease-in-out infinite;
 }
 
 .status-APPROVED {
@@ -304,6 +399,27 @@ a:hover {
 .status-REJECTED {
   background-color: #fdecea;
   color: #b3261e;
+}
+
+.status-SENT {
+  background-color: #e6f4ea;
+  color: #176a3a;
+}
+
+.status-FAILED {
+  background-color: #fdecea;
+  color: #b3261e;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    box-shadow: var(--shadow-sm);
+    filter: saturate(100%);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 188, 92, 0.22), var(--shadow-sm);
+    filter: saturate(110%);
+  }
 }
 
 .number-bump-group {
