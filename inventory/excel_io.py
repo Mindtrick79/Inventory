@@ -15,6 +15,31 @@ from config import (
 )
 
 
+_WORKBOOK_CACHE: dict = {}
+_WORKBOOK_CACHE_TTL_SECONDS = 5
+
+
+def _get_workbook_mtime(xlsx_path: str) -> float:
+    try:
+        return os.path.getmtime(xlsx_path)
+    except Exception:
+        return 0.0
+
+
+def _copy_dfs(dfs: Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]):
+    master_df, tx_df, vendors_df, reorder_log_df = dfs
+    return (
+        master_df.copy(deep=True),
+        tx_df.copy(deep=True),
+        vendors_df.copy(deep=True),
+        reorder_log_df.copy(deep=True),
+    )
+
+
+def _clear_workbook_cache() -> None:
+    _WORKBOOK_CACHE.clear()
+
+
 def _lock_path_for(xlsx_path: str) -> str:
     return f"{xlsx_path}.lock"
 
@@ -95,6 +120,14 @@ def load_inventory_workbook() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame,
     Returns master_df, tx_df, vendors_df, reorder_log_df.
     Missing optional sheets are created with headers and empty rows.
     """
+    now = time.time()
+    mtime = _get_workbook_mtime(LOCAL_XLSX)
+    cached = _WORKBOOK_CACHE.get("value")
+    cached_mtime = _WORKBOOK_CACHE.get("mtime")
+    cached_until = _WORKBOOK_CACHE.get("until", 0)
+    if cached is not None and cached_mtime == mtime and now < cached_until:
+        return _copy_dfs(cached)
+
     xls = pd.ExcelFile(LOCAL_XLSX, engine="openpyxl")
 
     sheet_names = xls.sheet_names
@@ -131,7 +164,11 @@ def load_inventory_workbook() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame,
     else:
         reorder_log_df = pd.DataFrame(columns=REORDER_LOG_COLUMNS)
 
-    return master_df, tx_df, vendors_df, reorder_log_df
+    result = (master_df, tx_df, vendors_df, reorder_log_df)
+    _WORKBOOK_CACHE["value"] = _copy_dfs(result)
+    _WORKBOOK_CACHE["mtime"] = mtime
+    _WORKBOOK_CACHE["until"] = now + _WORKBOOK_CACHE_TTL_SECONDS
+    return _copy_dfs(_WORKBOOK_CACHE["value"])
 
 
 def save_inventory_workbook(
@@ -147,6 +184,7 @@ def save_inventory_workbook(
     lock_path = _lock_path_for(LOCAL_XLSX)
     fd = _acquire_lock(lock_path)
     try:
+        _clear_workbook_cache()
         _backup_workbook(LOCAL_XLSX)
 
         tmp_path = f"{LOCAL_XLSX}.tmp"
@@ -161,3 +199,4 @@ def save_inventory_workbook(
         os.replace(tmp_path, LOCAL_XLSX)
     finally:
         _release_lock(fd, lock_path)
+        _clear_workbook_cache()
