@@ -10,6 +10,10 @@ DEFAULT_XLSX_PATH = os.path.join(BASE_DIR, "Central Inventory Log (1).xlsx")
 XLSX_PATH = os.environ.get("INVENTORY_XLSX_PATH", DEFAULT_XLSX_PATH)
 LOCAL_XLSX = XLSX_PATH
 
+# SQLite database path (recommended for durability and multi-user safety)
+DEFAULT_DB_PATH = os.path.join(os.path.expanduser("~"), "Desktop", "RobertsInventory", "inventory.db")
+DB_PATH = os.environ.get("INVENTORY_DB_PATH", DEFAULT_DB_PATH)
+
 MASTER_SHEET = "Master Inventory"
 TX_SHEET = "All Transactions"
 VENDOR_SHEET = "Vendors"

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
-from config import SECRET_KEY, BASE_DIR, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL
+from config import SECRET_KEY, BASE_DIR, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL, DB_PATH
 import os
 import json
 import hashlib
@@ -9,6 +9,9 @@ from datetime import timedelta
 import smtplib
 import re
 import pandas as pd
+from inventory.sqlite_db import get_counts as sqlite_get_counts
+from inventory.sqlite_db import import_from_excel as sqlite_import_from_excel
+from inventory.sqlite_db import init_db as sqlite_init_db
 from inventory.services import (
     get_all_products,
     get_low_stock_products,
@@ -331,6 +334,36 @@ def create_app():
                 return redirect(next_url)
             flash("Invalid username or password.", "danger")
         return render_template("login.html", settings=app.config["APP_SETTINGS"])
+
+    @app.route("/db", methods=["GET", "POST"])
+    @login_required("ADMIN")
+    def db_admin():
+        if request.method == "POST":
+            action = request.form.get("action", "").strip()
+            if action == "init":
+                sqlite_init_db(DB_PATH)
+                flash("SQLite database initialized.", "success")
+            elif action == "import":
+                counts = sqlite_import_from_excel(DB_PATH)
+                flash(
+                    f"Imported Excel → SQLite. Products={counts.get('products', 0)}, Vendors={counts.get('vendors', 0)}, Reorders={counts.get('reorders', 0)}, Transactions={counts.get('transactions', 0)}",
+                    "success",
+                )
+            else:
+                flash("Unknown database action.", "warning")
+            return redirect(url_for("db_admin"))
+
+        try:
+            counts = sqlite_get_counts(DB_PATH)
+        except Exception:
+            counts = None
+
+        return render_template(
+            "db_admin.html",
+            settings=app.config["APP_SETTINGS"],
+            db_path=DB_PATH,
+            counts=counts,
+        )
 
     @app.route("/logout")
     def logout():
