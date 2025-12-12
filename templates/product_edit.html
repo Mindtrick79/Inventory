@@ -252,8 +252,13 @@
     }
 
     openBtn.addEventListener('click', async function() {
+      if (window.isSecureContext === false) {
+        setStatus('Camera requires HTTPS (or localhost). Open this site via https:// or use the file picker to upload.');
+        input.click();
+        return;
+      }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setStatus('Camera is not supported in this browser. Use the file picker to upload.');
+        setStatus('Camera API unavailable in this browser. Try Chrome/Edge/Firefox, or use the file picker to upload.');
         input.click();
         return;
       }
