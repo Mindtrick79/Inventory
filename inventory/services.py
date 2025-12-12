@@ -21,6 +21,7 @@ from .sqlite_db import get_reorder_log as sqlite_get_reorder_log
 from .sqlite_db import adjust_product_quantity as sqlite_adjust_product_quantity
 from .sqlite_db import insert_reorder_log as sqlite_insert_reorder_log
 from .sqlite_db import update_reorder_status as sqlite_update_reorder_status
+from .sqlite_db import get_vendor_by_name as sqlite_get_vendor_by_name
 
 
 LOW_STOCK_STATUS = "LOW_STOCK"
@@ -414,6 +415,16 @@ def add_product(data: Dict[str, Any]) -> None:
 
 def _get_vendor_contact(vendor_name: str) -> Optional[Dict[str, Any]]:
     """Look up a vendor row in the Vendors sheet by Vendor Name."""
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            contact = sqlite_get_vendor_by_name(DB_PATH, vendor_name)
+            if contact:
+                return contact
+        except Exception:
+            # Fall back to Excel lookup
+            pass
+
     _, _, vendors_df, _ = load_inventory_workbook()
     if vendors_df.empty or "Vendor Name" not in vendors_df.columns:
         return None
