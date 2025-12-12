@@ -1,0 +1,16 @@
+{
+    "smtp_provider": "bluehost",
+    "smtp_host": "mail.robertspestcontrolllc.com",
+    "smtp_port": 587,
+    "smtp_user": "orders@robertspestcontrolllc.com",
+    "smtp_pass": "your_actual_password",
+    "smtp_use_tls": true,
+    "from_email": "orders@robertspestcontrolllc.com",
+    "email_subject_prefix": "Reorder Request - ",
+    "default_email_cc": "",
+    "email_footer": "Thank you for your business!",
+    "company_name": "Roberts Pest Control LLC",
+    "company_address": "123 Main St, Anytown, USA",
+    "company_phone": "(123) 456-7890",
+    "company_logo_path": ""
+}
