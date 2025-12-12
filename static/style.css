@@ -22,6 +22,11 @@ body {
   color: var(--color-text);
 }
 
+main {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 header {
   background-color: var(--color-header-bg);
   color: var(--color-header-text);
@@ -62,6 +67,41 @@ main {
   padding: calc(1.5rem * var(--spacing-scale, 1));
 }
 
+label {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="date"],
+textarea,
+select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: calc(0.55rem * var(--spacing-scale, 1)) calc(0.7rem * var(--spacing-scale, 1));
+  border: var(--border-width, 1px) solid rgba(0, 0, 0, 0.18);
+  border-radius: var(--radius, 6px);
+  background: #fff;
+  color: var(--color-text);
+  transition: box-shadow 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+
+textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: rgba(31, 78, 121, 0.65);
+  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.18);
+}
+
 table {
   border-collapse: collapse;
   width: 100%;
@@ -98,30 +138,89 @@ tr:hover {
 
 .form-actions {
   margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(0.6rem * var(--spacing-scale, 1));
+  align-items: center;
 }
 
 form div {
   margin-bottom: 0.75rem;
 }
 
-input[type="text"],
-input[type="number"] {
-  padding: calc(0.3rem * var(--spacing-scale, 1)) calc(0.4rem * var(--spacing-scale, 1));
-  border: 1px solid #ccc;
-  border-radius: var(--radius, 6px);
-}
-
-button {
-  padding: calc(0.4rem * var(--spacing-scale, 1)) calc(0.8rem * var(--spacing-scale, 1));
-  border: none;
+button,
+.button-link,
+a.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: calc(0.55rem * var(--spacing-scale, 1)) calc(0.95rem * var(--spacing-scale, 1));
+  border: var(--border-width, 1px) solid rgba(0, 0, 0, 0.12);
   border-radius: var(--radius, 6px);
   background-color: var(--color-button-bg);
   color: var(--color-button-text);
   cursor: pointer;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+  transition: background-color 120ms ease, transform 80ms ease, box-shadow 120ms ease, filter 120ms ease;
 }
 
-button:hover {
+button:hover,
+.button-link:hover,
+a.button-link:hover {
   background-color: var(--color-button-hover-bg);
+  text-decoration: none;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.16);
+}
+
+button:active,
+.button-link:active,
+a.button-link:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+button:focus-visible,
+.button-link:focus-visible,
+a.button-link:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(31, 78, 121, 0.25), 0 1px 2px rgba(0, 0, 0, 0.10);
+}
+
+button[disabled],
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Secondary action buttons */
+button.bump-btn {
+  box-shadow: none;
+  font-weight: 700;
+}
+
+a {
+  color: #1f4e79;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+.search-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: calc(0.6rem * var(--spacing-scale, 1));
+  align-items: end;
+  max-width: 720px;
+}
+
+.search-form label {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 900px) {
@@ -136,14 +235,19 @@ button:hover {
 
   input[type="text"],
   input[type="number"],
-  input[type="password"] {
+  input[type="password"],
+  input[type="date"],
+  textarea,
+  select {
     font-size: 1rem;
-    padding: 0.5rem 0.6rem;
+    padding: 0.6rem 0.75rem;
   }
 
-  button {
+  button,
+  .button-link,
+  a.button-link {
     font-size: 1rem;
-    padding: 0.6rem 0.9rem;
+    padding: 0.65rem 1rem;
   }
 
   th,
