@@ -1,12 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from config import SECRET_KEY, BASE_DIR, SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, FROM_EMAIL
 import os
 import json
 import hashlib
+import io
 from functools import wraps
 from datetime import timedelta
 import smtplib
 import re
+import pandas as pd
 from inventory.services import (
     get_all_products,
     get_low_stock_products,
@@ -685,6 +687,91 @@ def create_app():
     def reorder_log():
         log_rows = get_reorder_log()
         return render_template("reorder_log.html", log_rows=log_rows, settings=app.config["APP_SETTINGS"])
+
+
+    @app.route("/reorder-log/export.xlsx")
+    @login_required("VIEW")
+    def reorder_log_export_xlsx():
+        log_rows = get_reorder_log()
+        df = pd.DataFrame(log_rows)
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="Reorder Log", index=False)
+        output.seek(0)
+
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name="reorder_log.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+
+    @app.route("/reorder-log/export.pdf")
+    @login_required("VIEW")
+    def reorder_log_export_pdf():
+        try:
+            from fpdf import FPDF
+        except Exception:
+            flash("PDF export requires the fpdf2 package. Install it in the server venv.", "warning")
+            return redirect(url_for("reorder_log"))
+
+        log_rows = get_reorder_log()
+        columns = [
+            "Timestamp",
+            "User",
+            "Vendor",
+            "Items",
+            "Status",
+            "Notes",
+            "Approved By",
+        ]
+
+        pdf = FPDF(orientation="L", unit="mm", format="A4")
+        pdf.set_auto_page_break(auto=True, margin=10)
+        pdf.add_page()
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.cell(0, 10, "Reorder Log", ln=True)
+
+        pdf.set_font("Helvetica", "", 8)
+        col_widths = {
+            "Timestamp": 38,
+            "User": 18,
+            "Vendor": 28,
+            "Items": 120,
+            "Status": 18,
+            "Notes": 45,
+            "Approved By": 20,
+        }
+
+        pdf.set_font("Helvetica", "B", 8)
+        for c in columns:
+            pdf.cell(col_widths[c], 6, c, border=1)
+        pdf.ln()
+
+        pdf.set_font("Helvetica", "", 8)
+        for row in log_rows:
+            for c in columns:
+                v = str(row.get(c, "") or "")
+                v = v.replace("\r", " ").replace("\n", " ")
+                if len(v) > 200:
+                    v = v[:197] + "..."
+                pdf.cell(col_widths[c], 6, v, border=1)
+            pdf.ln()
+
+        data = pdf.output(dest="S")
+        if isinstance(data, str):
+            data = data.encode("latin-1")
+        output = io.BytesIO(data)
+        output.seek(0)
+
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name="reorder_log.pdf",
+            mimetype="application/pdf",
+        )
 
     @app.route("/stock", methods=["GET", "POST"])
     @login_required("REQUEST")

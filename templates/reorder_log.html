@@ -1,6 +1,10 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Reorder Log</h2>
+<div class="form-actions">
+  <a href="{{ url_for('reorder_log_export_xlsx') }}" class="button-link">Download Excel</a>
+  <a href="{{ url_for('reorder_log_export_pdf') }}" class="button-link">Download PDF</a>
+</div>
 {% if not log_rows %}
   <p>No reorder history yet.</p>
 {% else %}
