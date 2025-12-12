@@ -306,6 +306,16 @@ def get_reorder_log(db_path: str) -> List[Dict[str, Any]]:
     return [_row_json_to_dict(r["data_json"]) for r in rows]
 
 
+def get_transactions(db_path: str) -> List[Dict[str, Any]]:
+    """Return transaction dicts in the same shape as Excel-based All Transactions sheet."""
+    init_db(db_path)
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT data_json FROM transactions ORDER BY timestamp DESC"
+        ).fetchall()
+    return [_row_json_to_dict(r["data_json"]) for r in rows]
+
+
 def get_pending_reorders(db_path: str) -> List[Dict[str, Any]]:
     init_db(db_path)
     with connect(db_path) as conn:

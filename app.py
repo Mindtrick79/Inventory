@@ -14,6 +14,7 @@ import pandas as pd
 from inventory.sqlite_db import get_counts as sqlite_get_counts
 from inventory.sqlite_db import import_from_excel as sqlite_import_from_excel
 from inventory.sqlite_db import init_db as sqlite_init_db
+from inventory.sqlite_db import get_transactions as sqlite_get_transactions
 from inventory.services import (
     get_all_products,
     get_low_stock_products,
@@ -381,12 +382,20 @@ def create_app():
         except Exception:
             counts = None
 
+        total_rows = 0
+        try:
+            if isinstance(counts, dict):
+                total_rows = sum(int(v or 0) for v in counts.values())
+        except Exception:
+            total_rows = 0
+
         return render_template(
             "db_admin.html",
             settings=app.config["APP_SETTINGS"],
             db_path=DB_PATH,
             backend=(os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower(),
             counts=counts,
+            total_rows=total_rows,
         )
 
 
@@ -405,6 +414,35 @@ def create_app():
         output.seek(0)
 
         fname = f"inventory_export_{datetime.utcnow().date().isoformat()}.xlsx"
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=fname,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+
+    @app.route("/exports/sqlite.xlsx")
+    @login_required("ADMIN")
+    def export_sqlite_xlsx():
+        """Round-trip export using the original sheet names.
+
+        Useful when SQLite is the source of truth but you need a workbook for review/sharing.
+        """
+        products = get_all_products()
+        vendors = get_all_vendors()
+        reorder_rows = get_reorder_log()
+        tx_rows = sqlite_get_transactions(DB_PATH)
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            pd.DataFrame(products).to_excel(writer, sheet_name="Master Inventory", index=False)
+            pd.DataFrame(vendors).to_excel(writer, sheet_name="Vendors", index=False)
+            pd.DataFrame(reorder_rows).to_excel(writer, sheet_name="Reorder Log", index=False)
+            pd.DataFrame(tx_rows).to_excel(writer, sheet_name="All Transactions", index=False)
+        output.seek(0)
+
+        fname = f"sqlite_export_{datetime.utcnow().date().isoformat()}.xlsx"
         return send_file(
             output,
             as_attachment=True,
