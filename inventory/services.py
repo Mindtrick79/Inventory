@@ -26,6 +26,9 @@ def load_settings() -> Dict[str, Any]:
         "default_email_cc": "",
         "email_footer": "",
         "stock_use_notify_emails": "",
+        "company_address": "",
+        "company_phone": "",
+        "company_logo_path": "",
         # Email transport configuration; if left blank, falls back to config.py
         "smtp_provider": "bluehost",  # for future presets
         "smtp_host": "",
@@ -350,6 +353,14 @@ def send_reorder_email(
     if footer:
         body_lines.extend(["", footer])
 
+    # Append company branding if available
+    company_name = settings.get("company_name", "").strip()
+    company_address = settings.get("company_address", "").strip()
+    company_phone = settings.get("company_phone", "").strip()
+    branding_lines = [line for line in [company_name, company_address, company_phone] if line]
+    if branding_lines:
+        body_lines.extend(["", *branding_lines])
+
     body = "\n".join(body_lines)
 
     msg = EmailMessage()
@@ -471,6 +482,7 @@ def update_reorder_status(
     new_status: str,
     approved_by: str,
     approved_ip: str,
+    internal_notes: str = "",
 ) -> None:
     """Update the status and approval metadata for a reorder log row.
 
@@ -493,6 +505,12 @@ def update_reorder_status(
     reorder_log_df.loc[mask, "Approved Timestamp"] = now
     reorder_log_df.loc[mask, "Approved By"] = approved_by
     reorder_log_df.loc[mask, "Approved IP"] = approved_ip
+
+    # Ensure Internal Notes column exists and store any provided notes
+    if "Internal Notes" not in reorder_log_df.columns:
+        reorder_log_df["Internal Notes"] = ""
+    if internal_notes:
+        reorder_log_df.loc[mask, "Internal Notes"] = internal_notes
 
     save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
 
@@ -574,6 +592,14 @@ def send_pricing_request_email(
     footer = settings.get("email_footer", "")
     if footer:
         lines.extend(["", footer])
+
+    # Append company branding if available
+    company_name = settings.get("company_name", "").strip()
+    company_address = settings.get("company_address", "").strip()
+    company_phone = settings.get("company_phone", "").strip()
+    branding_lines = [line for line in [company_name, company_address, company_phone] if line]
+    if branding_lines:
+        lines.extend(["", *branding_lines])
 
     body = "\n".join(lines)
 

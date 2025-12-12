@@ -14,6 +14,7 @@
         <th>Items</th>
         <th>Status</th>
         <th>Notes</th>
+        <th>Internal Notes</th>
         <th>Approved Timestamp</th>
         <th>Approved By</th>
         <th>Approved IP</th>
@@ -35,6 +36,7 @@
           {% endif %}
         </td>
         <td>{{ row['Notes'] }}</td>
+        <td>{{ row['Internal Notes'] if 'Internal Notes' in row else '' }}</td>
         <td>{{ row['Approved Timestamp'] }}</td>
         <td>{{ row['Approved By'] }}</td>
         <td>{{ row['Approved IP'] }}</td>

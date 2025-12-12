@@ -35,6 +35,7 @@ from inventory.services import (
 def create_app():
     app = Flask(__name__)
     app.config["SECRET_KEY"] = SECRET_KEY
+    app.config["UPLOAD_FOLDER"] = os.path.join(BASE_DIR, "static", "uploads")
 
     # If session.permanent is set, keep the login for 30 days.
     app.permanent_session_lifetime = timedelta(days=30)
@@ -521,6 +522,8 @@ def create_app():
             vendor = form.get("vendor")
             user = form.get("user", "approver")
             ip = request.remote_addr or ""
+            approval_notes = form.get("approval_notes", "").strip()
+            internal_notes = form.get("internal_notes", "").strip()
 
             if action in {"APPROVE", "REJECT"} and timestamp and vendor:
                 new_status = "APPROVED" if action == "APPROVE" else "REJECTED"
@@ -546,7 +549,7 @@ def create_app():
                     email_ok = send_reorder_email(
                         vendor=vendor,
                         items_description=items_desc,
-                        notes="",
+                        notes=approval_notes,
                         extra_cc=extra_cc,
                     )
                     new_status = "SENT" if email_ok else "FAILED"
@@ -557,6 +560,7 @@ def create_app():
                     new_status=new_status,
                     approved_by=user,
                     approved_ip=ip,
+                    internal_notes=internal_notes,
                 )
                 flash(f"Reorder {new_status}.", "success")
             else:
@@ -679,8 +683,11 @@ def create_app():
     def settings_view():
         if request.method == "POST":
             current = app.config["APP_SETTINGS"].copy()
-            action = request.form.get("action", "save")
+            form = request.form
+            action = form.get("action", "save")
             current["company_name"] = request.form.get("company_name", current.get("company_name", ""))
+            current["company_address"] = request.form.get("company_address", current.get("company_address", ""))
+            current["company_phone"] = request.form.get("company_phone", current.get("company_phone", ""))
             current["email_subject_prefix"] = request.form.get("email_subject_prefix", current.get("email_subject_prefix", ""))
             current["default_email_cc"] = request.form.get("default_email_cc", current.get("default_email_cc", ""))
             current["email_footer"] = request.form.get("email_footer", current.get("email_footer", ""))
@@ -700,6 +707,18 @@ def create_app():
             if new_pass:
                 current["smtp_pass"] = new_pass
             current["smtp_use_tls"] = bool(request.form.get("smtp_use_tls") or current.get("smtp_use_tls", True))
+
+            # Handle optional logo upload
+            logo_file = request.files.get("company_logo")
+            if logo_file and logo_file.filename:
+                _, ext = os.path.splitext(logo_file.filename)
+                ext = ext.lower()
+                if ext in {".png", ".jpg", ".jpeg", ".gif"}:
+                    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+                    filename = f"company_logo{ext}"
+                    save_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                    logo_file.save(save_path)
+                    current["company_logo_path"] = f"uploads/{filename}"
 
             save_settings(current)
             app.config["APP_SETTINGS"] = current

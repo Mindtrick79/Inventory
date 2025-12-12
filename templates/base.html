@@ -8,7 +8,12 @@
   </head>
   <body>
     <header>
-      <h1>{{ settings.company_name if settings is defined else 'Roberts Inventory Manager' }}</h1>
+      <div class="header-branding">
+        {% if settings is defined and settings.company_logo_path %}
+          <img src="{{ url_for('static', filename=settings.company_logo_path) }}" alt="Logo" class="logo" style="max-height: 60px; margin-right: 10px;">
+        {% endif %}
+        <h1>{{ settings.company_name if settings is defined else 'Roberts Inventory Manager' }}</h1>
+      </div>
       <nav>
         {% set role = session.get('role', 'VIEW') %}
 

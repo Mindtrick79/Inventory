@@ -3,10 +3,20 @@
 <h2>Settings</h2>
 <p>Application configuration. (Intended for admin users.)</p>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
   <div>
     <label for="company_name">Company / App Name</label>
     <input type="text" id="company_name" name="company_name" value="{{ settings.company_name }}">
+  </div>
+
+  <div>
+    <label for="company_address">Company Address</label>
+    <textarea id="company_address" name="company_address" rows="2">{{ settings.company_address }}</textarea>
+  </div>
+
+  <div>
+    <label for="company_phone">Company Phone</label>
+    <input type="text" id="company_phone" name="company_phone" value="{{ settings.company_phone }}">
   </div>
 
   <div>
@@ -27,6 +37,38 @@
   <div>
     <label for="stock_use_notify_emails">Stock Use Notification Emails (comma-separated)</label>
     <input type="text" id="stock_use_notify_emails" name="stock_use_notify_emails" value="{{ settings.stock_use_notify_emails }}" placeholder="inventory@example.com, manager@example.com">
+  </div>
+
+  <hr>
+
+  <h3>Branding</h3>
+
+  <div>
+    <label for="company_logo">Company Logo (PNG/JPEG)</label>
+    <input type="file" id="company_logo" name="company_logo" accept="image/*">
+    {% if settings.company_logo_path %}
+      <div class="current-logo">
+        <p>Current logo:</p>
+        <img src="{{ url_for('static', filename=settings.company_logo_path) }}" alt="Company Logo" style="max-height: 60px;">
+      </div>
+    {% endif %}
+  </div>
+
+  <hr>
+
+  <h3>Email Branding Preview</h3>
+  <div class="email-preview">
+    <p><strong>Subject:</strong> {{ settings.email_subject_prefix }}Sample Vendor</p>
+    <pre style="white-space: pre-wrap; border: 1px solid #ccc; padding: 8px; background: #fafafa;">
+Sample email body...
+
+{{ settings.email_footer }}{% if settings.email_footer %}
+{% endif %}{% if settings.company_name or settings.company_address or settings.company_phone %}
+
+{{ settings.company_name }}
+{{ settings.company_address }}
+{{ settings.company_phone }}{% endif %}
+    </pre>
   </div>
 
   <hr>
