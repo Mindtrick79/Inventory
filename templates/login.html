@@ -1,23 +1,36 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Login</h2>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Login</h2>
+    <div class="page-toolbar__subtitle">Sign in to manage inventory, reorders, and reports.</div>
+  </div>
+</div>
+
 <form method="post">
-  <div>
-    <label for="username">Username</label>
-    <input type="text" id="username" name="username" required>
-  </div>
-  <div>
-    <label for="password">Password</label>
-    <input type="password" id="password" name="password" required>
-  </div>
-  <div>
-    <label>
-      <input type="checkbox" name="remember_me" value="1">
-      Remember me on this device
-    </label>
-  </div>
-  <div>
-    <button type="submit">Login</button>
+  <div class="form-card">
+    <div class="form-card__title">Sign in</div>
+    <div class="form-grid">
+      <div class="form-field form-field--span-12">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required>
+      </div>
+      <div class="form-field form-field--span-12">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div class="form-field form-field--span-12">
+        <label>
+          <input type="checkbox" name="remember_me" value="1">
+          Remember me on this device
+        </label>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">Login</button>
+      <a class="btn btn--ghost" href="{{ url_for('request_account') }}">Request an account</a>
+    </div>
   </div>
 </form>
 <p>

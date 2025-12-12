@@ -1,28 +1,41 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Request an Account</h2>
-<p>Fill out this form to request a login for Roberts Inventory Manager. An admin will review and create your account.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Request an Account</h2>
+    <div class="page-toolbar__subtitle">Fill out this form to request a login for Roberts Inventory Manager. An admin will review and create your account.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('login') }}">Back to Login</a>
+  </div>
+</div>
 
 <form method="post">
-  <div>
-    <label for="full_name">Full Name</label>
-    <input type="text" id="full_name" name="full_name">
-  </div>
-  <div>
-    <label for="email">Email</label>
-    <input type="email" id="email" name="email" required>
-  </div>
-  <div>
-    <label for="desired_username">Desired Username</label>
-    <input type="text" id="desired_username" name="desired_username" required>
-  </div>
-  <div>
-    <label for="notes">Notes (optional)</label>
-    <textarea id="notes" name="notes" rows="3" placeholder="e.g. Role requested, department, etc."></textarea>
-  </div>
-  <div>
-    <button type="submit">Submit Request</button>
-    <a href="{{ url_for('login') }}">Back to Login</a>
+  <div class="form-card">
+    <div class="form-card__title">Request details</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="full_name">Full Name</label>
+        <input type="text" id="full_name" name="full_name">
+      </div>
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div class="form-field">
+        <label for="desired_username">Desired Username</label>
+        <input type="text" id="desired_username" name="desired_username" required>
+      </div>
+      <div class="form-field form-field--span-12">
+        <label for="notes">Notes (optional)</label>
+        <textarea id="notes" name="notes" rows="3" placeholder="e.g. Role requested, department, etc."></textarea>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn--primary" type="submit">Submit Request</button>
+      <a class="btn btn--ghost" href="{{ url_for('login') }}">Back to Login</a>
+    </div>
   </div>
 </form>
 {% endblock %}
