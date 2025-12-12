@@ -6,7 +6,8 @@ import hashlib
 import io
 import calendar
 from functools import wraps
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
+from typing import Optional
 import smtplib
 import re
 import pandas as pd
@@ -875,6 +876,227 @@ def create_app():
             output,
             as_attachment=True,
             download_name="reorder_log.pdf",
+            mimetype="application/pdf",
+        )
+
+    def _parse_iso_date(raw: str) -> Optional[date]:
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(str(raw)).date()
+        except Exception:
+            return None
+
+    def _parse_iso_datetime(raw: str) -> Optional[datetime]:
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+        except Exception:
+            return None
+
+    def _filter_reorder_rows(rows: list[dict], filters: dict) -> list[dict]:
+        start_dt = _parse_iso_date(filters.get("start_date", ""))
+        end_dt = _parse_iso_date(filters.get("end_date", ""))
+
+        vendor_q = (filters.get("vendor") or "").strip().lower()
+        status_q = (filters.get("status") or "").strip().upper()
+        po_q = (filters.get("po_number") or "").strip().lower()
+        delivery_q = (filters.get("delivery_method") or "").strip().upper()
+        pickup_by_q = (filters.get("pickup_by") or "").strip().lower()
+        approved_by_q = (filters.get("approved_by") or "").strip().lower()
+
+        out: list[dict] = []
+        for r in rows:
+            ts = _parse_iso_datetime(r.get("Timestamp"))
+            if ts is not None:
+                d = ts.date()
+                if start_dt and d < start_dt:
+                    continue
+                if end_dt and d > end_dt:
+                    continue
+
+            if vendor_q and vendor_q not in str(r.get("Vendor", "")).lower():
+                continue
+            if status_q and str(r.get("Status", "")).upper() != status_q:
+                continue
+            if po_q and po_q not in str(r.get("PO Number", "")).lower():
+                continue
+            if delivery_q and str(r.get("Delivery Method", "")).upper() != delivery_q:
+                continue
+            if pickup_by_q and pickup_by_q not in str(r.get("Pickup By", "")).lower():
+                continue
+            if approved_by_q and approved_by_q not in str(r.get("Approved By", "")).lower():
+                continue
+
+            out.append(r)
+        return out
+
+    def _reorder_reports_context() -> tuple[list[dict], dict, list[str], dict]:
+        filters = {
+            "start_date": request.args.get("start_date", "").strip(),
+            "end_date": request.args.get("end_date", "").strip(),
+            "vendor": request.args.get("vendor", "").strip(),
+            "status": request.args.get("status", "").strip(),
+            "po_number": request.args.get("po_number", "").strip(),
+            "delivery_method": request.args.get("delivery_method", "").strip(),
+            "pickup_by": request.args.get("pickup_by", "").strip(),
+            "approved_by": request.args.get("approved_by", "").strip(),
+        }
+
+        all_rows = get_reorder_log()
+        statuses = sorted({str(r.get("Status", "")).upper() for r in all_rows if str(r.get("Status", "")).strip()})
+
+        rows = _filter_reorder_rows(all_rows, filters)
+        rows_sorted = sorted(rows, key=lambda r: str(r.get("Timestamp", "")), reverse=True)
+
+        # Summary KPIs
+        dates = [
+            _parse_iso_datetime(r.get("Timestamp")).date()
+            for r in rows
+            if _parse_iso_datetime(r.get("Timestamp")) is not None
+        ]
+        if dates:
+            min_d = min(dates).isoformat()
+            max_d = max(dates).isoformat()
+        else:
+            min_d = filters.get("start_date") or ""
+            max_d = filters.get("end_date") or ""
+
+        po_set = {str(r.get("PO Number", "")).strip() for r in rows if str(r.get("PO Number", "")).strip()}
+        vendor_set = {str(r.get("Vendor", "")).strip() for r in rows if str(r.get("Vendor", "")).strip()}
+        status_counts_map: dict[str, int] = {}
+        for r in rows:
+            s = str(r.get("Status", "")).strip().upper() or "(blank)"
+            status_counts_map[s] = status_counts_map.get(s, 0) + 1
+        status_counts = [
+            {"status": k, "count": v}
+            for k, v in sorted(status_counts_map.items(), key=lambda kv: (-kv[1], kv[0]))
+        ]
+
+        summary = {
+            "total_rows": len(rows),
+            "start_date": min_d,
+            "end_date": max_d,
+            "distinct_pos": len(po_set),
+            "distinct_vendors": len(vendor_set),
+            "status_counts": status_counts,
+        }
+
+        return rows_sorted, filters, statuses, summary
+
+    @app.route("/reports/reorders")
+    @login_required("VIEW")
+    def reorder_reports():
+        rows, filters, statuses, summary = _reorder_reports_context()
+        return render_template(
+            "reorder_reports.html",
+            rows=rows,
+            filters=filters,
+            statuses=statuses,
+            summary=summary,
+            settings=app.config["APP_SETTINGS"],
+        )
+
+    @app.route("/reports/reorders/export.xlsx")
+    @login_required("VIEW")
+    def reorder_reports_export_xlsx():
+        rows, filters, _, _ = _reorder_reports_context()
+        df = pd.DataFrame(rows)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
+            df.to_excel(writer, sheet_name="Reorder Report", index=False)
+        output.seek(0)
+
+        fname = "reorder_report.xlsx"
+        if filters.get("start_date") or filters.get("end_date"):
+            fname = f"reorder_report_{filters.get('start_date','')}_{filters.get('end_date','')}.xlsx"
+            fname = re.sub(r"[^a-zA-Z0-9_.-]+", "_", fname)
+
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=fname,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
+    @app.route("/reports/reorders/export.pdf")
+    @login_required("VIEW")
+    def reorder_reports_export_pdf():
+        try:
+            from fpdf import FPDF
+        except Exception:
+            flash("PDF export requires the fpdf2 package. Install it in the server venv.", "warning")
+            return redirect(url_for("reorder_reports", **request.args))
+
+        rows, filters, _, summary = _reorder_reports_context()
+        pdf = FPDF(orientation="L", unit="mm", format="A4")
+        pdf.set_auto_page_break(auto=True, margin=10)
+        pdf.add_page()
+        pdf.set_font("Helvetica", "B", 14)
+        pdf.cell(0, 10, "Reorder Report", ln=True)
+
+        pdf.set_font("Helvetica", "", 9)
+        subtitle = f"Rows: {summary.get('total_rows', 0)}"
+        if summary.get("start_date") or summary.get("end_date"):
+            subtitle += f" | Range: {summary.get('start_date','')} - {summary.get('end_date','')}"
+        if filters.get("vendor"):
+            subtitle += f" | Vendor contains: {filters.get('vendor')}"
+        if filters.get("status"):
+            subtitle += f" | Status: {filters.get('status')}"
+        if filters.get("po_number"):
+            subtitle += f" | PO contains: {filters.get('po_number')}"
+        pdf.multi_cell(0, 5, subtitle)
+        pdf.ln(2)
+
+        columns = [
+            "Timestamp",
+            "Vendor",
+            "Status",
+            "PO Number",
+            "Delivery Method",
+            "Pickup By",
+            "Needed By",
+            "Approved By",
+            "Items",
+        ]
+        col_widths = {
+            "Timestamp": 34,
+            "Vendor": 26,
+            "Status": 16,
+            "PO Number": 22,
+            "Delivery Method": 22,
+            "Pickup By": 24,
+            "Needed By": 22,
+            "Approved By": 24,
+            "Items": 110,
+        }
+
+        pdf.set_font("Helvetica", "B", 8)
+        for c in columns:
+            pdf.cell(col_widths[c], 6, c, border=1)
+        pdf.ln()
+
+        pdf.set_font("Helvetica", "", 8)
+        for r in rows:
+            for c in columns:
+                v = str(r.get(c, "") or "")
+                v = v.replace("\r", " ").replace("\n", " ")
+                if len(v) > 180:
+                    v = v[:177] + "..."
+                pdf.cell(col_widths[c], 6, v, border=1)
+            pdf.ln()
+
+        data = pdf.output(dest="S")
+        if isinstance(data, str):
+            data = data.encode("latin-1")
+        output = io.BytesIO(data)
+        output.seek(0)
+
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name="reorder_report.pdf",
             mimetype="application/pdf",
         )
 

@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Reorder Reports</h2>
+
+<div class="form-actions">
+  <a class="button-link" href="{{ url_for('reorder_reports_export_xlsx', **filters) }}">Export Excel</a>
+  <a class="button-link" href="{{ url_for('reorder_reports_export_pdf', **filters) }}">Export PDF</a>
+</div>
+
+<form method="get" class="search-form">
+  <label>Filters</label>
+  <input type="date" name="start_date" value="{{ filters.start_date }}" placeholder="Start date">
+  <input type="date" name="end_date" value="{{ filters.end_date }}" placeholder="End date">
+  <input type="text" name="vendor" value="{{ filters.vendor }}" placeholder="Vendor">
+  <input type="text" name="po_number" value="{{ filters.po_number }}" placeholder="PO #">
+  <input type="text" name="pickup_by" value="{{ filters.pickup_by }}" placeholder="Pickup By">
+  <input type="text" name="approved_by" value="{{ filters.approved_by }}" placeholder="Approved By">
+  <select name="delivery_method">
+    <option value="">Delivery (Any)</option>
+    <option value="SHIP" {% if filters.delivery_method == 'SHIP' %}selected{% endif %}>SHIP</option>
+    <option value="PICKUP" {% if filters.delivery_method == 'PICKUP' %}selected{% endif %}>PICKUP</option>
+  </select>
+  <select name="status">
+    <option value="">Status (Any)</option>
+    {% for s in statuses %}
+      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Apply</button>
+  <a class="button-link" href="{{ url_for('reorder_reports') }}">Reset</a>
+</form>
+
+{% if summary %}
+  <section>
+    <h3>Summary</h3>
+    <div class="summary-cards">
+      <div class="card">
+        <h4>Total Rows</h4>
+        <p>{{ summary.total_rows }}</p>
+      </div>
+      <div class="card">
+        <h4>Date Range</h4>
+        <p>{{ summary.start_date }} → {{ summary.end_date }}</p>
+      </div>
+      <div class="card">
+        <h4>POs</h4>
+        <p>{{ summary.distinct_pos }}</p>
+      </div>
+      <div class="card">
+        <h4>Vendors</h4>
+        <p>{{ summary.distinct_vendors }}</p>
+      </div>
+    </div>
+
+    <div class="summary-cards">
+      {% for item in summary.status_counts %}
+        <div class="card">
+          <h4>{{ item.status }}</h4>
+          <p>{{ item.count }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endif %}
+
+<section>
+  <h3>Results</h3>
+  {% if not rows %}
+    <p>No rows match the current filters.</p>
+  {% else %}
+    <table>
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Vendor</th>
+          <th>Status</th>
+          <th>PO #</th>
+          <th>Delivery</th>
+          <th>Pickup By</th>
+          <th>Needed By</th>
+          <th>Approved By</th>
+          <th>Items</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ r.get('Timestamp','') }}</td>
+          <td>{{ r.get('Vendor','') }}</td>
+          <td>
+            {% if r.get('Status') %}
+              <span class="status-badge status-{{ r.get('Status') }}">{{ r.get('Status') }}</span>
+            {% endif %}
+          </td>
+          <td>{{ r.get('PO Number','') }}</td>
+          <td>{{ r.get('Delivery Method','') }}</td>
+          <td>{{ r.get('Pickup By','') }}</td>
+          <td>{{ r.get('Needed By','') }}</td>
+          <td>{{ r.get('Approved By','') }}</td>
+          <td>{{ r.get('Items','') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+</section>
+
+{% endblock %}
