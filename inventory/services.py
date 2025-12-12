@@ -22,6 +22,9 @@ from .sqlite_db import adjust_product_quantity as sqlite_adjust_product_quantity
 from .sqlite_db import insert_reorder_log as sqlite_insert_reorder_log
 from .sqlite_db import update_reorder_status as sqlite_update_reorder_status
 from .sqlite_db import get_vendor_by_name as sqlite_get_vendor_by_name
+from .sqlite_db import get_all_vendors as sqlite_get_all_vendors
+from .sqlite_db import upsert_vendor as sqlite_upsert_vendor
+from .sqlite_db import upsert_product as sqlite_upsert_product
 
 
 LOW_STOCK_STATUS = "LOW_STOCK"
@@ -363,6 +366,14 @@ def update_product(original_name: str, data: Dict[str, Any]) -> bool:
     was found. This treats Product Name as the key.
     """
 
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return bool(sqlite_upsert_product(DB_PATH, original_name, data))
+        except Exception:
+            # Fall back to Excel update
+            pass
+
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
     if master_df.empty or "Product Name" not in master_df.columns:
         return False
@@ -407,6 +418,15 @@ def get_low_stock_grouped_by_vendor() -> Dict[str, List[Dict[str, Any]]]:
 
 
 def add_product(data: Dict[str, Any]) -> None:
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            sqlite_upsert_product(DB_PATH, None, data)
+            return
+        except Exception:
+            # Fall back to Excel insert
+            pass
+
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
     new_row = pd.DataFrame([data])
     master_df = pd.concat([master_df, new_row], ignore_index=True)
@@ -767,6 +787,14 @@ def get_pending_reorders() -> List[Dict[str, Any]]:
 
 def get_all_vendors() -> List[Dict[str, Any]]:
     """Return all vendors as dicts, ensuring standard columns exist."""
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return sqlite_get_all_vendors(DB_PATH)
+        except Exception:
+            # Fall back to Excel
+            pass
+
     _, _, vendors_df, _ = load_inventory_workbook()
     if vendors_df.empty:
         vendors_df = pd.DataFrame(columns=VENDOR_COLUMNS)
@@ -781,6 +809,15 @@ def get_all_vendors() -> List[Dict[str, Any]]:
 
 def upsert_vendor(data: Dict[str, Any]) -> None:
     """Insert or update a vendor row based on Vendor Name."""
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            sqlite_upsert_vendor(DB_PATH, data)
+            return
+        except Exception:
+            # Fall back to Excel
+            pass
+
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
     name = str(data.get("Vendor Name", "")).strip()
     if not name:
