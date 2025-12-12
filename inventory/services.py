@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Dict, Any, DefaultDict, Optional
 from collections import defaultdict
 import smtplib
+import re
 from email.message import EmailMessage
 from email.utils import make_msgid
 import mimetypes
@@ -427,6 +428,7 @@ def send_reorder_email(
     items_description: str,
     notes: str = "",
     extra_cc: Optional[List[str]] = None,
+    order_meta: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """Send a reorder email to the vendor.
 
@@ -452,12 +454,27 @@ def send_reorder_email(
 
     subject = f"{prefix}{vendor}"
 
+    delivery_method = str((order_meta or {}).get("delivery_method") or "SHIP").upper()
+    needed_by = str((order_meta or {}).get("needed_by") or "").strip()
+    delivery_notes = str((order_meta or {}).get("delivery_notes") or "").strip()
+
+    delivery_label = "Ship to our address" if delivery_method != "PICKUP" else "Pickup (we will pick up)"
+
     body_lines = [
         f"Vendor: {vendor}",
-        "",
-        "The following items are requested for reorder:",
-        items_description,
+        f"Delivery: {delivery_label}",
     ]
+    if needed_by:
+        body_lines.append(f"Needed By: {needed_by}")
+    if delivery_notes:
+        body_lines.append(f"Delivery Notes: {delivery_notes}")
+    body_lines.extend(
+        [
+            "",
+            "The following items are requested for reorder:",
+            items_description,
+        ]
+    )
     if notes:
         body_lines.extend(["", f"Request Notes: {notes}"])
     if vendor_notes:
@@ -484,6 +501,144 @@ def send_reorder_email(
     if cc_emails:
         msg["Cc"] = ", ".join(cc_emails)
     msg.set_content(body)
+
+    # Optional PDF purchase order attachment
+    try:
+        from fpdf import FPDF
+
+        def _parse_items(items_text: str) -> List[Dict[str, str]]:
+            rows: List[Dict[str, str]] = []
+            parts = [p.strip() for p in str(items_text).split(";") if p.strip()]
+            for part in parts:
+                product_name = ""
+                qty = ""
+                unit_label = ""
+                location = ""
+                try:
+                    if "Order:" in part:
+                        name_part, rest = part.split("Order:", 1)
+                        product_name = name_part.split("–", 1)[0].strip()
+                        rest = rest.strip()
+                        tokens = rest.split()
+                        if tokens:
+                            qty = tokens[0]
+                        if len(tokens) >= 2:
+                            unit_label = tokens[1]
+                        if "Location:" in part:
+                            location = part.split("Location:", 1)[1].strip().rstrip(")")
+                except Exception:
+                    continue
+
+                if product_name:
+                    row = {
+                        "product": product_name,
+                        "qty": qty,
+                        "unit": unit_label,
+                        "location": location,
+                    }
+
+                    # Enrich with product metadata if available
+                    try:
+                        p = get_product_by_name(product_name)
+                    except Exception:
+                        p = None
+                    if isinstance(p, dict):
+                        row["container_unit"] = str(p.get("Container Unit", "")).strip()
+                        pack = (
+                            str(p.get("Units Per Case", "")).strip()
+                            or str(p.get("Pack Size", "")).strip()
+                            or str(p.get("Case Pack", "")).strip()
+                            or str(p.get("Pieces Per Case", "")).strip()
+                        )
+                        if pack:
+                            row["pack"] = pack
+
+                    rows.append(row)
+            return rows
+
+        def _pdf_bytes() -> bytes:
+            settings_local = settings
+            company_name_local = str(settings_local.get("company_name", "")).strip() or "Purchase Order"
+            company_address_local = str(settings_local.get("company_address", "")).strip()
+            company_phone_local = str(settings_local.get("company_phone", "")).strip()
+            logo_path = str(settings_local.get("company_logo_path", "")).strip()
+
+            pdf = FPDF(orientation="P", unit="mm", format="Letter")
+            pdf.set_auto_page_break(auto=True, margin=12)
+            pdf.add_page()
+
+            if logo_path:
+                try:
+                    abs_logo = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", logo_path)
+                    if os.path.exists(abs_logo):
+                        pdf.image(abs_logo, x=12, y=12, w=28)
+                except Exception:
+                    pass
+
+            pdf.set_xy(44, 12)
+            pdf.set_font("Helvetica", "B", 16)
+            pdf.cell(0, 8, company_name_local, ln=1)
+            pdf.set_font("Helvetica", "", 10)
+            if company_address_local:
+                for line in company_address_local.splitlines():
+                    pdf.set_x(44)
+                    pdf.cell(0, 5, line, ln=1)
+            if company_phone_local:
+                pdf.set_x(44)
+                pdf.cell(0, 5, company_phone_local, ln=1)
+
+            pdf.ln(6)
+            pdf.set_x(12)
+            pdf.set_font("Helvetica", "B", 12)
+            pdf.cell(0, 7, "Purchase Order", ln=1)
+            pdf.set_font("Helvetica", "", 10)
+            pdf.cell(0, 5, f"Vendor: {vendor}", ln=1)
+            pdf.cell(0, 5, f"Delivery: {delivery_label}", ln=1)
+            if needed_by:
+                pdf.cell(0, 5, f"Needed By: {needed_by}", ln=1)
+            if delivery_notes:
+                pdf.multi_cell(0, 5, f"Delivery Notes: {delivery_notes}")
+            approved_by = str((order_meta or {}).get("approved_by") or "").strip()
+            if approved_by:
+                pdf.cell(0, 5, f"Approved By: {approved_by}", ln=1)
+
+            pdf.ln(4)
+
+            items = _parse_items(items_description)
+            if not items:
+                pdf.multi_cell(0, 5, "No line items found.")
+            else:
+                headers = ["Product", "Qty", "Unit", "Container", "Pack", "Location"]
+                col_w = [70, 12, 18, 22, 18, 45]
+                pdf.set_font("Helvetica", "B", 9)
+                for i, h in enumerate(headers):
+                    pdf.cell(col_w[i], 7, h, border=1)
+                pdf.ln()
+                pdf.set_font("Helvetica", "", 9)
+                for it in items:
+                    pdf.cell(col_w[0], 6, str(it.get("product", ""))[:45], border=1)
+                    pdf.cell(col_w[1], 6, str(it.get("qty", ""))[:10], border=1)
+                    pdf.cell(col_w[2], 6, str(it.get("unit", ""))[:12], border=1)
+                    pdf.cell(col_w[3], 6, str(it.get("container_unit", ""))[:14], border=1)
+                    pdf.cell(col_w[4], 6, str(it.get("pack", ""))[:12], border=1)
+                    pdf.cell(col_w[5], 6, str(it.get("location", ""))[:30], border=1)
+                    pdf.ln()
+
+            if notes:
+                pdf.ln(3)
+                pdf.set_font("Helvetica", "B", 10)
+                pdf.cell(0, 6, "Notes", ln=1)
+                pdf.set_font("Helvetica", "", 10)
+                pdf.multi_cell(0, 5, notes)
+
+            return bytes(pdf.output(dest="S"))
+
+        pdf_data = _pdf_bytes()
+        filename = f"purchase_order_{vendor}_{datetime.utcnow().date().isoformat()}.pdf"
+        filename = re.sub(r"[^a-zA-Z0-9_.-]+", "_", filename)
+        msg.add_attachment(pdf_data, maintype="application", subtype="pdf", filename=filename)
+    except Exception:
+        pass
 
     extra_cc = extra_cc or []
     recipients = [to_email] + cc_emails + default_cc + extra_cc

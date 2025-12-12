@@ -12,6 +12,21 @@
       <input type="text" id="user" name="user" placeholder="Approver name">
     </div>
     <div>
+      <label for="delivery_method">Delivery Method</label>
+      <select id="delivery_method" name="delivery_method">
+        <option value="SHIP">Ship to our address</option>
+        <option value="PICKUP">Pickup (we will pick up)</option>
+      </select>
+    </div>
+    <div>
+      <label for="needed_by">Needed By (optional)</label>
+      <input type="date" id="needed_by" name="needed_by">
+    </div>
+    <div>
+      <label for="delivery_notes">Delivery / Pickup Notes (optional)</label>
+      <textarea id="delivery_notes" name="delivery_notes" rows="2" placeholder="e.g. Call when ready, ship ASAP, hold for pickup"></textarea>
+    </div>
+    <div>
       <label for="approval_notes">Notes to include in vendor email (optional)</label>
       <textarea id="approval_notes" name="approval_notes" rows="3"></textarea>
     </div>
@@ -41,8 +56,8 @@
           <td>{{ row['Items'] }}</td>
           <td>{{ row['Status'] }}</td>
           <td>
-            <button type="submit" name="action" value="APPROVE" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" onclick="this.form.timestamp.value='{{ row['Timestamp'] }}'; this.form.vendor.value='{{ row['Vendor'] }}';">Approve</button>
-            <button type="submit" name="action" value="REJECT" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" onclick="this.form.timestamp.value='{{ row['Timestamp'] }}'; this.form.vendor.value='{{ row['Vendor'] }}';">Reject</button>
+            <button type="submit" name="action" value="APPROVE" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" data-set-timestamp="{{ row['Timestamp'] }}" data-set-vendor="{{ row['Vendor'] }}">Approve</button>
+            <button type="submit" name="action" value="REJECT" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" data-set-timestamp="{{ row['Timestamp'] }}" data-set-vendor="{{ row['Vendor'] }}">Reject</button>
           </td>
         </tr>
         {% endfor %}
@@ -51,5 +66,21 @@
     <input type="hidden" name="timestamp" value="">
     <input type="hidden" name="vendor" value="">
   </form>
+
+  <script>
+    (function() {
+      var form = document.querySelector('form');
+      if (!form) return;
+      form.addEventListener('click', function(e) {
+        var btn = e.target;
+        if (!btn || !btn.dataset) return;
+        if (!btn.dataset.setTimestamp || !btn.dataset.setVendor) return;
+        var ts = form.querySelector('input[name="timestamp"]');
+        var v = form.querySelector('input[name="vendor"]');
+        if (ts) ts.value = btn.dataset.setTimestamp;
+        if (v) v.value = btn.dataset.setVendor;
+      });
+    })();
+  </script>
 {% endif %}
 {% endblock %}

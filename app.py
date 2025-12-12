@@ -715,6 +715,9 @@ def create_app():
             vendor = form.get("vendor")
             user = form.get("user", "approver")
             ip = request.remote_addr or ""
+            delivery_method = (form.get("delivery_method") or "SHIP").strip().upper()
+            needed_by = (form.get("needed_by") or "").strip()
+            delivery_notes = (form.get("delivery_notes") or "").strip()
             approval_notes = form.get("approval_notes", "").strip()
             internal_notes = form.get("internal_notes", "").strip()
 
@@ -744,6 +747,13 @@ def create_app():
                         items_description=items_desc,
                         notes=approval_notes,
                         extra_cc=extra_cc,
+                        order_meta={
+                            "delivery_method": delivery_method,
+                            "needed_by": needed_by,
+                            "delivery_notes": delivery_notes,
+                            "approved_by": user,
+                            "timestamp": timestamp,
+                        },
                     )
                     new_status = "SENT" if email_ok else "FAILED"
 
