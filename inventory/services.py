@@ -950,6 +950,22 @@ def get_products_for_vendor(vendor_name: str) -> List[Dict[str, Any]]:
 
     Ensures Cost Per Unit exists for downstream pricing workflows.
     """
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            products = sqlite_get_all_products(DB_PATH)
+            out: List[Dict[str, Any]] = []
+            for p in products:
+                if str(p.get("Distributor", "")) != str(vendor_name):
+                    continue
+                if "Cost Per Unit" not in p:
+                    p["Cost Per Unit"] = ""
+                out.append(p)
+            return out
+        except Exception:
+            # Fall back to Excel
+            pass
+
     master_df, _, _, _ = load_inventory_workbook()
     if master_df.empty or "Distributor" not in master_df.columns:
         return []
