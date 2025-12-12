@@ -1,11 +1,23 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Vendors</h2>
-<p><a href="{{ url_for('vendor_new') }}">Add New Vendor</a></p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Vendors</h2>
+    <div class="page-toolbar__subtitle">Manage vendor contact info for purchase orders, pricing requests, and CC lists.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--primary" href="{{ url_for('vendor_new') }}">Add New Vendor</a>
+  </div>
+</div>
 
 {% if not vendors %}
-  <p>No vendors defined yet.</p>
+  <div class="empty-state">
+    <div class="empty-state__title">No vendors defined yet</div>
+    <div class="empty-state__hint">Add a vendor so reorder approvals can email the correct contact.</div>
+  </div>
 {% else %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -30,5 +42,6 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 {% endif %}
 {% endblock %}

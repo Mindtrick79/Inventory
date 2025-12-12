@@ -1,21 +1,34 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Pricing Request</h2>
 
-<p>Send a vendor a list of products you use so they can reply with updated pricing.</p>
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Pricing Request</h2>
+    <div class="page-toolbar__subtitle">Send a vendor a list of products you use so they can reply with updated pricing.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('vendors') }}">Vendors</a>
+  </div>
+</div>
 
-<form method="get" class="vendor-select-form">
-  <label for="vendor">Vendor</label>
-  <select id="vendor" name="vendor" onchange="this.form.submit()">
-    <option value="">-- Select a vendor --</option>
-    {% for v in vendors %}
-      {% set name = v['Vendor Name'] %}
-      <option value="{{ name }}" {% if selected_vendor == name %}selected{% endif %}>{{ name }}</option>
-    {% endfor %}
-  </select>
-  <noscript>
-    <button type="submit">Load Products</button>
-  </noscript>
+<form method="get" class="search-form search-form--toolbar vendor-select-form">
+  <div class="search-form__row">
+    <div class="search-form__field form-field--span-12">
+      <label for="vendor">Vendor</label>
+      <select id="vendor" name="vendor" onchange="this.form.submit()">
+        <option value="">-- Select a vendor --</option>
+        {% for v in vendors %}
+          {% set name = v['Vendor Name'] %}
+          <option value="{{ name }}" {% if selected_vendor == name %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="search-form__actions">
+      <noscript>
+        <button class="btn btn--primary btn--sm" type="submit">Load Products</button>
+      </noscript>
+    </div>
+  </div>
 </form>
 
 {% if selected_vendor %}
@@ -24,6 +37,7 @@
   <form method="post" class="pricing-request-form">
     <input type="hidden" name="vendor" value="{{ selected_vendor }}">
 
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -50,23 +64,32 @@
         {% endfor %}
       </tbody>
     </table>
-
-    <div>
-      <label for="notes">Notes to vendor (optional)</label>
-      <textarea id="notes" name="notes" rows="3" placeholder="e.g. Please provide your latest pricing for these items."></textarea>
     </div>
 
-    <div>
-      <label for="extra_cc">Additional CC emails (comma-separated, optional)</label>
-      <input type="text" id="extra_cc" name="extra_cc" placeholder="boss@example.com, office@example.com">
-    </div>
+    <div class="form-card">
+      <div class="form-card__title">Email details</div>
+      <div class="form-grid">
+        <div class="form-field form-field--span-12">
+          <label for="notes">Notes to vendor (optional)</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="e.g. Please provide your latest pricing for these items."></textarea>
+        </div>
 
-    <div>
-      <button type="submit">Send Pricing Request Email</button>
+        <div class="form-field form-field--span-12">
+          <label for="extra_cc">Additional CC emails (comma-separated, optional)</label>
+          <input type="text" id="extra_cc" name="extra_cc" placeholder="boss@example.com, office@example.com">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn--primary" type="submit">Send Pricing Request Email</button>
+      </div>
     </div>
   </form>
   {% else %}
-    <p>No products found for this vendor.</p>
+    <div class="empty-state">
+      <div class="empty-state__title">No products found for this vendor</div>
+      <div class="empty-state__hint">Assign this vendor as a distributor on products to include them here.</div>
+    </div>
   {% endif %}
 {% endif %}
 

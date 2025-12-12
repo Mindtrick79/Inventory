@@ -1,18 +1,33 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Stock Use</h2>
-<p>Record materials used so inventory can be adjusted and logged.</p>
 
-<form method="get" class="search-form">
-  <label for="q">Search</label>
-  <input type="text" id="q" name="q" value="{{ query or '' }}" placeholder="Name, category, vendor, or location">
-  <button type="submit">Filter</button>
-  {% if query %}
-    <a href="{{ url_for('stock_use') }}">Clear</a>
-  {% endif %}
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Stock Use</h2>
+    <div class="page-toolbar__subtitle">Record materials used so inventory can be adjusted and logged.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('products') }}">View Products</a>
+  </div>
+</div>
+
+<form method="get" class="search-form search-form--toolbar">
+  <div class="search-form__row">
+    <div class="search-form__field">
+      <label for="q">Search</label>
+      <input type="text" id="q" name="q" value="{{ query or '' }}" placeholder="Name, category, vendor, or location">
+    </div>
+    <div class="search-form__actions">
+      <button class="btn btn--primary btn--sm" type="submit">Filter</button>
+      {% if query %}
+        <a class="btn btn--secondary btn--sm" href="{{ url_for('stock_use') }}">Clear</a>
+      {% endif %}
+    </div>
+  </div>
 </form>
 
 {% if products %}
+<div class="table-wrap">
 <table>
   <thead>
     <tr>
@@ -39,7 +54,7 @@
           <input type="text" name="truck" placeholder="Truck" value="{{ session.get('default_truck','') }}">
           <input type="text" name="checkout_notes" placeholder="Notes (optional)">
           <input type="number" step="1" min="1" name="amount" style="width:4rem;" required>
-          <button type="submit">Used</button>
+          <button class="btn btn--primary btn--sm" type="submit">Used</button>
         </form>
       </td>
       <td></td>
@@ -47,7 +62,11 @@
     {% endfor %}
   </tbody>
 </table>
+ </div>
 {% else %}
-<p>No products found.</p>
+<div class="empty-state">
+  <div class="empty-state__title">No products found</div>
+  <div class="empty-state__hint">Try adjusting your search, or add products first.</div>
+</div>
 {% endif %}
 {% endblock %}

@@ -1,16 +1,26 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Database</h2>
 
-<form method="post" class="form-actions">
-  <button type="submit" name="action" value="init">Initialize SQLite DB</button>
-  <button type="submit" name="action" value="import">Import Excel → SQLite</button>
-</form>
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Database</h2>
+    <div class="page-toolbar__subtitle">Admin tools for initializing SQLite and importing from Excel.</div>
+  </div>
+</div>
+
+<div class="form-card">
+  <div class="form-card__title">Actions</div>
+  <form method="post" class="form-actions">
+    <button class="btn btn--primary" type="submit" name="action" value="init">Initialize SQLite DB</button>
+    <button class="btn btn--secondary" type="submit" name="action" value="import">Import Excel → SQLite</button>
+  </form>
+</div>
 
 <h3>Current SQLite DB</h3>
 <p><strong>Path:</strong> {{ db_path }}</p>
 
 {% if counts %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -27,8 +37,12 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 {% else %}
-  <p>No database initialized yet.</p>
+  <div class="empty-state">
+    <div class="empty-state__title">No database initialized yet</div>
+    <div class="empty-state__hint">Initialize the DB and import from Excel to enable the SQLite backend.</div>
+  </div>
 {% endif %}
 
 {% endblock %}

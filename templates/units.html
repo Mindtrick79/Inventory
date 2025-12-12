@@ -1,11 +1,20 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Units &amp; Labels Management</h2>
-<p>Admin-only: rename container units, reorder quantity labels, and distributors across all products.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Units &amp; Labels Management</h2>
+    <div class="page-toolbar__subtitle">Admin-only: rename container units, reorder quantity labels, and distributors across all products.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('products') }}">Products</a>
+  </div>
+</div>
 
 <section>
   <h3>Container Units</h3>
   {% if container_units %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -23,7 +32,7 @@
             <input type="hidden" name="column" value="Container Unit">
             <input type="hidden" name="old_value" value="{{ u }}">
             <input type="text" name="new_value" placeholder="New value" required>
-            <button type="submit">Rename</button>
+            <button class="btn btn--primary btn--sm" type="submit">Rename</button>
           </form>
         </td>
         <td></td>
@@ -31,14 +40,19 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-    <p>No container units found.</p>
+    <div class="empty-state">
+      <div class="empty-state__title">No container units found</div>
+      <div class="empty-state__hint">Add products with container units first.</div>
+    </div>
   {% endif %}
 </section>
 
 <section>
   <h3>Reorder Quantity Labels</h3>
   {% if reorder_labels %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -56,7 +70,7 @@
             <input type="hidden" name="column" value="Reorder Quantity">
             <input type="hidden" name="old_value" value="{{ lbl }}">
             <input type="text" name="new_value" placeholder="New value" required>
-            <button type="submit">Rename</button>
+            <button class="btn btn--primary btn--sm" type="submit">Rename</button>
           </form>
         </td>
         <td></td>
@@ -64,14 +78,19 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-    <p>No reorder quantity labels found.</p>
+    <div class="empty-state">
+      <div class="empty-state__title">No reorder quantity labels found</div>
+      <div class="empty-state__hint">Add products with reorder labels first.</div>
+    </div>
   {% endif %}
 </section>
 
 <section>
   <h3>Distributors</h3>
   {% if distributors %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -89,7 +108,7 @@
             <input type="hidden" name="column" value="Distributor">
             <input type="hidden" name="old_value" value="{{ d }}">
             <input type="text" name="new_value" placeholder="New value" required>
-            <button type="submit">Rename</button>
+            <button class="btn btn--primary btn--sm" type="submit">Rename</button>
           </form>
         </td>
         <td></td>
@@ -97,8 +116,12 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-    <p>No distributors found.</p>
+    <div class="empty-state">
+      <div class="empty-state__title">No distributors found</div>
+      <div class="empty-state__hint">Add products with distributors first.</div>
+    </div>
   {% endif %}
 </section>
 

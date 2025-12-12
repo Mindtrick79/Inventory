@@ -1,161 +1,182 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Theme Settings</h2>
-<p>Customize colors and fonts for the app. Changes apply to all users.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Theme Settings</h2>
+    <div class="page-toolbar__subtitle">Customize colors and fonts for the app. Changes apply to all users.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('index') }}">Dashboard</a>
+  </div>
+</div>
 
 <form method="post" id="theme-form">
-  <fieldset>
-    <legend>Presets</legend>
-    <div>
-      <label for="theme_preset">Theme Preset</label>
-      <select id="theme_preset" name="theme_preset">
-        <option value="custom" selected>Custom</option>
-        <option value="default">Default</option>
-        <option value="dark">Dark</option>
-        <option value="highcontrast">High Contrast</option>
-        <option value="forest">Forest</option>
-        <option value="sunset">Sunset</option>
-        <option value="slate">Slate</option>
-      </select>
+  <div class="form-card">
+    <div class="form-card__title">Presets</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="theme_preset">Theme Preset</label>
+        <select id="theme_preset" name="theme_preset">
+          <option value="custom" selected>Custom</option>
+          <option value="default">Default</option>
+          <option value="dark">Dark</option>
+          <option value="highcontrast">High Contrast</option>
+          <option value="forest">Forest</option>
+          <option value="sunset">Sunset</option>
+          <option value="slate">Slate</option>
+        </select>
+      </div>
     </div>
-  </fieldset>
-  <fieldset>
-    <legend>Layout</legend>
-    <div>
-      <label for="theme_bg">Page Background</label>
-      <input type="color" id="theme_bg" name="theme_bg" value="{{ settings.theme_bg }}">
-    </div>
-    <div>
-      <label for="theme_text">Body Text</label>
-      <input type="color" id="theme_text" name="theme_text" value="{{ settings.theme_text or '#111111' }}">
-    </div>
-    <div>
-      <label for="theme_card_bg">Card / Table Background</label>
-      <input type="color" id="theme_card_bg" name="theme_card_bg" value="{{ settings.theme_card_bg }}">
-    </div>
-    <div>
-      <label for="theme_radius">Corner Radius</label>
-      <select id="theme_radius" name="theme_radius">
-        {% set current_radius = settings.theme_radius or '6px' %}
-        <option value="0px" {% if current_radius == '0px' %}selected{% endif %}>Square</option>
-        <option value="4px" {% if current_radius == '4px' %}selected{% endif %}>Small</option>
-        <option value="6px" {% if current_radius == '6px' %}selected{% endif %}>Medium</option>
-        <option value="10px" {% if current_radius == '10px' %}selected{% endif %}>Large</option>
-        <option value="16px" {% if current_radius == '16px' %}selected{% endif %}>Extra</option>
-      </select>
-    </div>
-    <div>
-      <label for="theme_border_width">Border Thickness</label>
-      <select id="theme_border_width" name="theme_border_width">
-        {% set current_bw = settings.theme_border_width or '1px' %}
-        <option value="0px" {% if current_bw == '0px' %}selected{% endif %}>None</option>
-        <option value="1px" {% if current_bw == '1px' %}selected{% endif %}>1px</option>
-        <option value="2px" {% if current_bw == '2px' %}selected{% endif %}>2px</option>
-        <option value="3px" {% if current_bw == '3px' %}selected{% endif %}>3px</option>
-      </select>
-    </div>
-    <div>
-      <label for="theme_spacing">Spacing Density</label>
-      {% set current_spacing = settings.theme_spacing or '1' %}
-      <select id="theme_spacing" name="theme_spacing">
-        <option value="0.85" {% if current_spacing == '0.85' %}selected{% endif %}>Compact</option>
-        <option value="1" {% if current_spacing == '1' %}selected{% endif %}>Normal</option>
-        <option value="1.15" {% if current_spacing == '1.15' %}selected{% endif %}>Comfortable</option>
-        <option value="1.3" {% if current_spacing == '1.3' %}selected{% endif %}>Extra</option>
-      </select>
-    </div>
-    <div>
-      <label for="theme_header_height">Header Height (optional)</label>
-      <input type="text" id="theme_header_height" name="theme_header_height" value="{{ settings.theme_header_height or '' }}" placeholder="e.g. 72px">
-    </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Header &amp; Navigation</legend>
-    <div>
-      <label for="theme_header_bg">Header Bar</label>
-      <input type="color" id="theme_header_bg" name="theme_header_bg" value="{{ settings.theme_header_bg }}">
+  <div class="form-card">
+    <div class="form-card__title">Layout</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="theme_bg">Page Background</label>
+        <input type="color" id="theme_bg" name="theme_bg" value="{{ settings.theme_bg }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_text">Body Text</label>
+        <input type="color" id="theme_text" name="theme_text" value="{{ settings.theme_text or '#111111' }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_card_bg">Card / Table Background</label>
+        <input type="color" id="theme_card_bg" name="theme_card_bg" value="{{ settings.theme_card_bg }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_radius">Corner Radius</label>
+        <select id="theme_radius" name="theme_radius">
+          {% set current_radius = settings.theme_radius or '6px' %}
+          <option value="0px" {% if current_radius == '0px' %}selected{% endif %}>Square</option>
+          <option value="4px" {% if current_radius == '4px' %}selected{% endif %}>Small</option>
+          <option value="6px" {% if current_radius == '6px' %}selected{% endif %}>Medium</option>
+          <option value="10px" {% if current_radius == '10px' %}selected{% endif %}>Large</option>
+          <option value="16px" {% if current_radius == '16px' %}selected{% endif %}>Extra</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="theme_border_width">Border Thickness</label>
+        <select id="theme_border_width" name="theme_border_width">
+          {% set current_bw = settings.theme_border_width or '1px' %}
+          <option value="0px" {% if current_bw == '0px' %}selected{% endif %}>None</option>
+          <option value="1px" {% if current_bw == '1px' %}selected{% endif %}>1px</option>
+          <option value="2px" {% if current_bw == '2px' %}selected{% endif %}>2px</option>
+          <option value="3px" {% if current_bw == '3px' %}selected{% endif %}>3px</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="theme_spacing">Spacing Density</label>
+        {% set current_spacing = settings.theme_spacing or '1' %}
+        <select id="theme_spacing" name="theme_spacing">
+          <option value="0.85" {% if current_spacing == '0.85' %}selected{% endif %}>Compact</option>
+          <option value="1" {% if current_spacing == '1' %}selected{% endif %}>Normal</option>
+          <option value="1.15" {% if current_spacing == '1.15' %}selected{% endif %}>Comfortable</option>
+          <option value="1.3" {% if current_spacing == '1.3' %}selected{% endif %}>Extra</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="theme_header_height">Header Height (optional)</label>
+        <input type="text" id="theme_header_height" name="theme_header_height" value="{{ settings.theme_header_height or '' }}" placeholder="e.g. 72px">
+      </div>
     </div>
-    <div>
-      <label for="theme_header_text">Header Text</label>
-      <input type="color" id="theme_header_text" name="theme_header_text" value="{{ settings.theme_header_text }}">
-    </div>
-    <div>
-      <label for="theme_nav_link">Nav Link</label>
-      <input type="color" id="theme_nav_link" name="theme_nav_link" value="{{ settings.theme_nav_link }}">
-    </div>
-    <div>
-      <label for="theme_nav_link_hover">Nav Link (Hover)</label>
-      <input type="color" id="theme_nav_link_hover" name="theme_nav_link_hover" value="{{ settings.theme_nav_link_hover }}">
-    </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Tables</legend>
-    <div>
-      <label for="theme_table_header_bg">Header Row</label>
-      <input type="color" id="theme_table_header_bg" name="theme_table_header_bg" value="{{ settings.theme_table_header_bg }}">
+  <div class="form-card">
+    <div class="form-card__title">Header &amp; Navigation</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="theme_header_bg">Header Bar</label>
+        <input type="color" id="theme_header_bg" name="theme_header_bg" value="{{ settings.theme_header_bg }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_header_text">Header Text</label>
+        <input type="color" id="theme_header_text" name="theme_header_text" value="{{ settings.theme_header_text }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_nav_link">Nav Link</label>
+        <input type="color" id="theme_nav_link" name="theme_nav_link" value="{{ settings.theme_nav_link }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_nav_link_hover">Nav Link (Hover)</label>
+        <input type="color" id="theme_nav_link_hover" name="theme_nav_link_hover" value="{{ settings.theme_nav_link_hover }}">
+      </div>
     </div>
-    <div>
-      <label for="theme_table_row_alt">Alternate Row</label>
-      <input type="color" id="theme_table_row_alt" name="theme_table_row_alt" value="{{ settings.theme_table_row_alt }}">
-    </div>
-    <div>
-      <label for="theme_table_row_hover">Row Hover</label>
-      <input type="color" id="theme_table_row_hover" name="theme_table_row_hover" value="{{ settings.theme_table_row_hover }}">
-    </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Buttons</legend>
-    <div>
-      <label for="theme_button_bg">Button Background</label>
-      <input type="color" id="theme_button_bg" name="theme_button_bg" value="{{ settings.theme_button_bg }}">
+  <div class="form-card">
+    <div class="form-card__title">Tables</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="theme_table_header_bg">Header Row</label>
+        <input type="color" id="theme_table_header_bg" name="theme_table_header_bg" value="{{ settings.theme_table_header_bg }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_table_row_alt">Alternate Row</label>
+        <input type="color" id="theme_table_row_alt" name="theme_table_row_alt" value="{{ settings.theme_table_row_alt }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_table_row_hover">Row Hover</label>
+        <input type="color" id="theme_table_row_hover" name="theme_table_row_hover" value="{{ settings.theme_table_row_hover }}">
+      </div>
     </div>
-    <div>
-      <label for="theme_button_hover_bg">Button Hover</label>
-      <input type="color" id="theme_button_hover_bg" name="theme_button_hover_bg" value="{{ settings.theme_button_hover_bg }}">
-    </div>
-    <div>
-      <label for="theme_button_text">Button Text</label>
-      <input type="color" id="theme_button_text" name="theme_button_text" value="{{ settings.theme_button_text }}">
-    </div>
-  </fieldset>
+  </div>
 
-  <fieldset>
-    <legend>Fonts</legend>
-    <div>
-      <label for="theme_font_family">Base Font</label>
-      <input type="hidden" id="theme_google_font_url" name="theme_google_font_url" value="{{ settings.theme_google_font_url or '' }}">
-      <select id="theme_font_family" name="theme_font_family">
-        {% set current_font = settings.theme_font_family or 'Arial, sans-serif' %}
-        <optgroup label="System Fonts">
-        <option value="Arial, sans-serif" {% if current_font == 'Arial, sans-serif' %}selected{% endif %}>Arial</option>
-        <option value="'Segoe UI', sans-serif" {% if current_font == "'Segoe UI', sans-serif" %}selected{% endif %}>Segoe UI</option>
-        <option value="'Georgia', serif" {% if current_font == "'Georgia', serif" %}selected{% endif %}>Georgia</option>
-        <option value="'Tahoma', sans-serif" {% if current_font == "'Tahoma', sans-serif" %}selected{% endif %}>Tahoma</option>
-        <option value="'Trebuchet MS', sans-serif" {% if current_font == "'Trebuchet MS', sans-serif" %}selected{% endif %}>Trebuchet MS</option>
-        <option value="'Verdana', sans-serif" {% if current_font == "'Verdana', sans-serif" %}selected{% endif %}>Verdana</option>
-        <option value="'Times New Roman', serif" {% if current_font == "'Times New Roman', serif" %}selected{% endif %}>Times New Roman</option>
-        <option value="'Courier New', monospace" {% if current_font == "'Courier New', monospace" %}selected{% endif %}>Courier New</option>
-        <option value="'Consolas', monospace" {% if current_font == "'Consolas', monospace" %}selected{% endif %}>Consolas</option>
-        </optgroup>
-
-        <optgroup label="Google Fonts">
-          <option value="'Inter', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" {% if current_font == "'Inter', sans-serif" %}selected{% endif %}>Inter (Google)</option>
-          <option value="'Roboto', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" {% if current_font == "'Roboto', sans-serif" %}selected{% endif %}>Roboto (Google)</option>
-          <option value="'Open Sans', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" {% if current_font == "'Open Sans', sans-serif" %}selected{% endif %}>Open Sans (Google)</option>
-          <option value="'Lato', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" {% if current_font == "'Lato', sans-serif" %}selected{% endif %}>Lato (Google)</option>
-          <option value="'Poppins', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" {% if current_font == "'Poppins', sans-serif" %}selected{% endif %}>Poppins (Google)</option>
-          <option value="'Montserrat', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" {% if current_font == "'Montserrat', sans-serif" %}selected{% endif %}>Montserrat (Google)</option>
-          <option value="'Source Sans 3', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" {% if current_font == "'Source Sans 3', sans-serif" %}selected{% endif %}>Source Sans 3 (Google)</option>
-        </optgroup>
-      </select>
+  <div class="form-card">
+    <div class="form-card__title">Buttons</div>
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="theme_button_bg">Button Background</label>
+        <input type="color" id="theme_button_bg" name="theme_button_bg" value="{{ settings.theme_button_bg }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_button_hover_bg">Button Hover</label>
+        <input type="color" id="theme_button_hover_bg" name="theme_button_hover_bg" value="{{ settings.theme_button_hover_bg }}">
+      </div>
+      <div class="form-field">
+        <label for="theme_button_text">Button Text</label>
+        <input type="color" id="theme_button_text" name="theme_button_text" value="{{ settings.theme_button_text }}">
+      </div>
     </div>
-  </fieldset>
+  </div>
+
+  <div class="form-card">
+    <div class="form-card__title">Fonts</div>
+    <div class="form-grid">
+      <div class="form-field form-field--span-12">
+        <label for="theme_font_family">Base Font</label>
+        <input type="hidden" id="theme_google_font_url" name="theme_google_font_url" value="{{ settings.theme_google_font_url or '' }}">
+        <select id="theme_font_family" name="theme_font_family">
+          {% set current_font = settings.theme_font_family or 'Arial, sans-serif' %}
+          <optgroup label="System Fonts">
+          <option value="Arial, sans-serif" {% if current_font == 'Arial, sans-serif' %}selected{% endif %}>Arial</option>
+          <option value="'Segoe UI', sans-serif" {% if current_font == "'Segoe UI', sans-serif" %}selected{% endif %}>Segoe UI</option>
+          <option value="'Georgia', serif" {% if current_font == "'Georgia', serif" %}selected{% endif %}>Georgia</option>
+          <option value="'Tahoma', sans-serif" {% if current_font == "'Tahoma', sans-serif" %}selected{% endif %}>Tahoma</option>
+          <option value="'Trebuchet MS', sans-serif" {% if current_font == "'Trebuchet MS', sans-serif" %}selected{% endif %}>Trebuchet MS</option>
+          <option value="'Verdana', sans-serif" {% if current_font == "'Verdana', sans-serif" %}selected{% endif %}>Verdana</option>
+          <option value="'Times New Roman', serif" {% if current_font == "'Times New Roman', serif" %}selected{% endif %}>Times New Roman</option>
+          <option value="'Courier New', monospace" {% if current_font == "'Courier New', monospace" %}selected{% endif %}>Courier New</option>
+          <option value="'Consolas', monospace" {% if current_font == "'Consolas', monospace" %}selected{% endif %}>Consolas</option>
+          </optgroup>
+
+          <optgroup label="Google Fonts">
+            <option value="'Inter', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" {% if current_font == "'Inter', sans-serif" %}selected{% endif %}>Inter (Google)</option>
+            <option value="'Roboto', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" {% if current_font == "'Roboto', sans-serif" %}selected{% endif %}>Roboto (Google)</option>
+            <option value="'Open Sans', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" {% if current_font == "'Open Sans', sans-serif" %}selected{% endif %}>Open Sans (Google)</option>
+            <option value="'Lato', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" {% if current_font == "'Lato', sans-serif" %}selected{% endif %}>Lato (Google)</option>
+            <option value="'Poppins', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" {% if current_font == "'Poppins', sans-serif" %}selected{% endif %}>Poppins (Google)</option>
+            <option value="'Montserrat', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" {% if current_font == "'Montserrat', sans-serif" %}selected{% endif %}>Montserrat (Google)</option>
+            <option value="'Source Sans 3', sans-serif" data-google-url="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap" {% if current_font == "'Source Sans 3', sans-serif" %}selected{% endif %}>Source Sans 3 (Google)</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+  </div>
 
   <div class="form-actions">
-    <button type="submit">Save Theme</button>
+    <button class="btn btn--primary" type="submit">Save Theme</button>
   </div>
 </form>
  
