@@ -1,5 +1,6 @@
 ﻿import smtplib
 from email.message import EmailMessage
+import os
 
 def test_office_email():
     # Office 365 SMTP settings
@@ -7,7 +8,7 @@ def test_office_email():
         "host": "smtp.office365.com",
         "port": 587,
         "user": "office@robertspest.com",
-        "password": "6362430900",
+        "password": os.environ.get("OFFICE365_SMTP_PASS", ""),
         "from_email": "office@robertspest.com",
         "to_email": "office@robertspest.com"
     }
@@ -26,6 +27,8 @@ def test_office_email():
             server.starttls()
             print(" TLS started")
             print("Logging in...")
+            if not smtp_config["password"]:
+                raise RuntimeError("Missing OFFICE365_SMTP_PASS environment variable")
             server.login(smtp_config["user"], smtp_config["password"])
             print(" Logged in")
             print("Sending email...")

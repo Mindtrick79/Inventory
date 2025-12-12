@@ -1,4 +1,6 @@
 import os
+import time
+import shutil
 from typing import Tuple
 
 import pandas as pd
@@ -11,6 +13,59 @@ from config import (
     VENDOR_SHEET,
     REORDER_LOG_SHEET,
 )
+
+
+def _lock_path_for(xlsx_path: str) -> str:
+    return f"{xlsx_path}.lock"
+
+
+def _acquire_lock(lock_path: str, timeout_seconds: int = 20) -> int:
+    """Create an exclusive lock file.
+
+    This avoids concurrent writers corrupting the workbook.
+    """
+    start = time.time()
+    while True:
+        try:
+            fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, str(os.getpid()).encode("utf-8"))
+            return fd
+        except FileExistsError:
+            if time.time() - start > timeout_seconds:
+                raise TimeoutError(f"Timed out waiting for lock: {lock_path}")
+            time.sleep(0.1)
+
+
+def _release_lock(fd: int, lock_path: str) -> None:
+    try:
+        os.close(fd)
+    except Exception:
+        pass
+    try:
+        os.remove(lock_path)
+    except Exception:
+        pass
+
+
+def _ensure_backup_dir(xlsx_path: str) -> str:
+    base_dir = os.path.dirname(os.path.abspath(xlsx_path))
+    backup_dir = os.path.join(base_dir, "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    return backup_dir
+
+
+def _backup_workbook(xlsx_path: str) -> None:
+    if not os.path.exists(xlsx_path):
+        return
+    backup_dir = _ensure_backup_dir(xlsx_path)
+    ts = time.strftime("%Y%m%d-%H%M%S")
+    base = os.path.basename(xlsx_path)
+    backup_path = os.path.join(backup_dir, f"{base}.{ts}.bak")
+    try:
+        shutil.copy2(xlsx_path, backup_path)
+    except Exception:
+        # Backups are best-effort; do not block the write.
+        pass
 
 
 VENDOR_COLUMNS = [
@@ -89,9 +144,20 @@ def save_inventory_workbook(
 
     Hook point: extend later to log transactions into All Transactions.
     """
-    with pd.ExcelWriter(LOCAL_XLSX, engine="openpyxl") as writer:
-        master_df.to_excel(writer, sheet_name=MASTER_SHEET, index=False)
-        if not tx_df.empty:
-            tx_df.to_excel(writer, sheet_name=TX_SHEET, index=False)
-        vendors_df.to_excel(writer, sheet_name=VENDOR_SHEET, index=False)
-        reorder_log_df.to_excel(writer, sheet_name=REORDER_LOG_SHEET, index=False)
+    lock_path = _lock_path_for(LOCAL_XLSX)
+    fd = _acquire_lock(lock_path)
+    try:
+        _backup_workbook(LOCAL_XLSX)
+
+        tmp_path = f"{LOCAL_XLSX}.tmp"
+        with pd.ExcelWriter(tmp_path, engine="openpyxl") as writer:
+            master_df.to_excel(writer, sheet_name=MASTER_SHEET, index=False)
+            if not tx_df.empty:
+                tx_df.to_excel(writer, sheet_name=TX_SHEET, index=False)
+            vendors_df.to_excel(writer, sheet_name=VENDOR_SHEET, index=False)
+            reorder_log_df.to_excel(writer, sheet_name=REORDER_LOG_SHEET, index=False)
+
+        # Atomic replace on POSIX; on Windows, this still replaces reliably via os.replace.
+        os.replace(tmp_path, LOCAL_XLSX)
+    finally:
+        _release_lock(fd, lock_path)
