@@ -25,6 +25,7 @@ from .sqlite_db import get_vendor_by_name as sqlite_get_vendor_by_name
 from .sqlite_db import get_all_vendors as sqlite_get_all_vendors
 from .sqlite_db import upsert_vendor as sqlite_upsert_vendor
 from .sqlite_db import upsert_product as sqlite_upsert_product
+from .sqlite_db import bulk_replace_product_field as sqlite_bulk_replace_product_field
 
 
 LOW_STOCK_STATUS = "LOW_STOCK"
@@ -236,6 +237,15 @@ def get_distinct_product_values(column: str) -> List[str]:
 
     Used to populate dropdowns (e.g. Container Unit, Reorder Quantity).
     """
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            products = sqlite_get_all_products(DB_PATH)
+            values = sorted({str(p.get(column, "")).strip() for p in products if str(p.get(column, "")).strip()})
+            return values
+        except Exception:
+            pass
+
     master_df, _, _, _ = load_inventory_workbook()
     if master_df.empty or column not in master_df.columns:
         return []
@@ -254,6 +264,15 @@ def rename_product_value(column: str, old_value: str, new_value: str) -> bool:
 
     if not new_value or column not in {"Container Unit", "Reorder Quantity", "Distributor"}:
         return False
+
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            updated = int(sqlite_bulk_replace_product_field(DB_PATH, column, str(old_value), str(new_value)))
+            return updated > 0
+        except Exception:
+            # Fall back to Excel
+            pass
 
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
     if master_df.empty or column not in master_df.columns:
