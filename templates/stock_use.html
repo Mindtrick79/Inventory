@@ -32,9 +32,12 @@
       <td>{{ p['Quantity on Hand'] }}</td>
       <td>{{ p['Container Unit'] }}</td>
       <td>
-        <form method="post" style="display:flex; gap:0.5rem; align-items:center;">
+        <form method="post" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
           <input type="hidden" name="product_name" value="{{ p['Product Name'] }}">
           <input type="hidden" name="location" value="{{ p['Location'] }}">
+          <input type="text" name="job" placeholder="Job / Customer" required>
+          <input type="text" name="truck" placeholder="Truck" value="{{ session.get('default_truck','') }}">
+          <input type="text" name="checkout_notes" placeholder="Notes (optional)">
           <input type="number" step="1" min="1" name="amount" style="width:4rem;" required>
           <button type="submit">Used</button>
         </form>

@@ -11,6 +11,10 @@
       <tr>
         <th>Username</th>
         <th>Role</th>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Default Truck</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -19,8 +23,12 @@
       <tr>
         <td>{{ u.username }}</td>
         <td>{{ u.role }}</td>
+        <td>{{ u.display_name }}</td>
+        <td>{{ u.phone }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.default_truck }}</td>
         <td>
-          <button type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}')">Edit</button>
+          <button type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}', '{{ u.display_name }}', '{{ u.phone }}', '{{ u.email }}', '{{ u.default_truck }}')">Edit</button>
         </td>
       </tr>
       {% endfor %}
@@ -37,6 +45,22 @@
     <div>
       <label for="username">Username</label>
       <input type="text" id="username" name="username" required>
+    </div>
+    <div>
+      <label for="display_name">Name</label>
+      <input type="text" id="display_name" name="display_name" placeholder="Technician name">
+    </div>
+    <div>
+      <label for="phone">Phone</label>
+      <input type="text" id="phone" name="phone" placeholder="Cell phone">
+    </div>
+    <div>
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" placeholder="Optional">
+    </div>
+    <div>
+      <label for="default_truck">Default Truck</label>
+      <input type="text" id="default_truck" name="default_truck" placeholder="Truck 1, Truck 2, etc.">
     </div>
     <div>
       <label for="password">Password (leave blank to keep existing)</label>
@@ -57,11 +81,27 @@
 </section>
 
 <script>
-  function editUser(username, role) {
+  function editUser(username, role, displayName, phone, email, defaultTruck) {
     var uInput = document.getElementById('username');
+    var displayNameInput = document.getElementById('display_name');
+    var phoneInput = document.getElementById('phone');
+    var emailInput = document.getElementById('email');
+    var defaultTruckInput = document.getElementById('default_truck');
     var roleSelect = document.getElementById('role');
     if (uInput) {
       uInput.value = username;
+    }
+    if (displayNameInput) {
+      displayNameInput.value = displayName || '';
+    }
+    if (phoneInput) {
+      phoneInput.value = phone || '';
+    }
+    if (emailInput) {
+      emailInput.value = email || '';
+    }
+    if (defaultTruckInput) {
+      defaultTruckInput.value = defaultTruck || '';
     }
     if (roleSelect) {
       for (var i = 0; i < roleSelect.options.length; i++) {

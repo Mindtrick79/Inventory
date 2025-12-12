@@ -104,6 +104,34 @@ button:hover {
   background-color: var(--color-button-hover-bg);
 }
 
+@media (max-width: 900px) {
+  main {
+    padding: 1rem;
+  }
+
+  nav a {
+    display: inline-block;
+    margin: 0.25rem 0.75rem 0.25rem 0;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  input[type="password"] {
+    font-size: 1rem;
+    padding: 0.5rem 0.6rem;
+  }
+
+  button {
+    font-size: 1rem;
+    padding: 0.6rem 0.9rem;
+  }
+
+  th,
+  td {
+    font-size: 1rem;
+  }
+}
+
 .flash-messages {
   list-style: none;
   padding: 0;

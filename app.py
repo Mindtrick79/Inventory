@@ -225,6 +225,10 @@ def create_app():
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "")
             role = request.form.get("role", "VIEW").strip().upper() or "VIEW"
+            display_name = request.form.get("display_name", "").strip()
+            phone = request.form.get("phone", "").strip()
+            email = request.form.get("email", "").strip()
+            default_truck = request.form.get("default_truck", "").strip()
 
             if not username:
                 flash("Username is required.", "danger")
@@ -242,10 +246,18 @@ def create_app():
                     break
 
             if existing is None:
-                existing = {"username": username, "password_hash": "", "role": role}
+                existing = {
+                    "username": username,
+                    "password_hash": "",
+                    "role": role,
+                }
                 users.append(existing)
 
             existing["role"] = role
+            existing["display_name"] = display_name
+            existing["phone"] = phone
+            existing["email"] = email
+            existing["default_truck"] = default_truck
 
             if password:
                 existing["password_hash"] = _hash_password(username, password)
@@ -256,7 +268,14 @@ def create_app():
 
         # Do not expose password hashes to the template
         display_users = [
-            {"username": u.get("username", ""), "role": u.get("role", "VIEW")}
+            {
+                "username": u.get("username", ""),
+                "role": u.get("role", "VIEW"),
+                "display_name": u.get("display_name", ""),
+                "phone": u.get("phone", ""),
+                "email": u.get("email", ""),
+                "default_truck": u.get("default_truck", ""),
+            }
             for u in users
         ]
 
@@ -276,6 +295,10 @@ def create_app():
             if user:
                 session["username"] = user["username"]
                 session["role"] = user.get("role", "VIEW")
+                session["display_name"] = user.get("display_name", "")
+                session["phone"] = user.get("phone", "")
+                session["email"] = user.get("email", "")
+                session["default_truck"] = user.get("default_truck", "")
                 # Respect remember-me checkbox: make session persistent if checked.
                 remember = request.form.get("remember_me")
                 session.permanent = bool(remember)
@@ -289,6 +312,10 @@ def create_app():
     def logout():
         session.pop("username", None)
         session.pop("role", None)
+        session.pop("display_name", None)
+        session.pop("phone", None)
+        session.pop("email", None)
+        session.pop("default_truck", None)
         flash("You have been logged out.", "info")
         return redirect(url_for("login"))
 
@@ -646,6 +673,12 @@ def create_app():
             amount_raw = form.get("amount", "").strip()
             user = session.get("username", "stock-user")
             location = form.get("location", "").strip()
+            job = form.get("job", "").strip()
+            truck = form.get("truck", "").strip()
+            checkout_notes = form.get("checkout_notes", "").strip()
+
+            display_name = session.get("display_name", "").strip()
+            phone = session.get("phone", "").strip()
 
             try:
                 amount = float(amount_raw)
@@ -655,12 +688,25 @@ def create_app():
             if not product_name or amount <= 0:
                 flash("Select a product and enter a positive amount used.", "danger")
             else:
+                notes_parts: list[str] = ["Checkout"]
+                if job:
+                    notes_parts.append(f"Job: {job}")
+                if truck:
+                    notes_parts.append(f"Truck: {truck}")
+                if display_name:
+                    notes_parts.append(f"Name: {display_name}")
+                if phone:
+                    notes_parts.append(f"Phone: {phone}")
+                if checkout_notes:
+                    notes_parts.append(f"Notes: {checkout_notes}")
+                notes_text = "; ".join(notes_parts)
+
                 result = adjust_product_quantity(
                     product_name=product_name,
                     delta=-amount,
                     user=user,
                     location=location,
-                    notes="Stock use",
+                    notes=notes_text,
                 )
                 if not result:
                     flash("Unable to record stock use for that product.", "danger")
@@ -673,11 +719,16 @@ def create_app():
                         subject = f"Stock Use - {result['product_name']}"
                         body_lines = [
                             f"User: {user}",
+                            f"Name: {display_name or '(not set)'}",
+                            f"Phone: {phone or '(not set)'}",
+                            f"Truck: {truck or '(not set)'}",
+                            f"Job: {job or '(not set)'}",
                             f"Product: {result['product_name']}",
                             f"Location: {result['location']}",
                             f"Amount Used: {amount}",
                             f"Old Quantity: {result['old_quantity']}",
                             f"New Quantity: {result['new_quantity']}",
+                            f"Notes: {checkout_notes or '(none)'}",
                         ]
                         body = "\n".join(body_lines)
 
