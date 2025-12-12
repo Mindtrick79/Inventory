@@ -660,7 +660,11 @@ def create_app():
             return redirect(url_for("reorder"))
 
         grouped = get_low_stock_grouped_by_vendor()
-        return render_template("reorder.html", grouped=grouped)
+        return render_template(
+            "reorder.html",
+            grouped=grouped,
+            settings=app.config["APP_SETTINGS"],
+        )
 
     @app.route("/approvals", methods=["GET", "POST"])
     @login_required("APPROVER")
@@ -719,7 +723,11 @@ def create_app():
             return redirect(url_for("approvals"))
 
         pending = get_pending_reorders()
-        return render_template("approvals.html", pending=pending)
+        return render_template(
+            "approvals.html",
+            pending=pending,
+            settings=app.config["APP_SETTINGS"],
+        )
 
     @app.route("/reorder-log")
     @login_required("VIEW")
