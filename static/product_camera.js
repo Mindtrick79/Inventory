@@ -171,6 +171,7 @@
     });
 
     openBtn.addEventListener('click', async function () {
+      renderHttpsHelp(httpsHelpEl);
       if (window.isSecureContext === false) {
         setStatusWithHttpsHint(statusEl, 'Camera requires HTTPS (or localhost).');
         input.click();
