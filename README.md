@@ -50,6 +50,55 @@ export FLASK_ENV=development
 flask run --host 0.0.0.0 --port 8000
 ```
 
+## SQLite migration path (recommended source of truth)
+
+SQLite is the recommended backend for **durability** and **multi-user safety**. Excel remains supported for import/export.
+
+### 1) Set your DB path
+
+Choose where the SQLite file should live (example):
+
+```bash
+export INVENTORY_DB_PATH="/home/pi/RobertsInventory/inventory.db"
+```
+
+### 2) Initialize + import Excel → SQLite
+
+In the app UI (ADMIN):
+
+1) Go to **Database** (`/db`)
+2) Click **Initialize SQLite DB**
+3) Click **Import Excel → SQLite**
+
+This import is **lossless**: it stores the full Excel row JSON plus indexed columns for lookups.
+
+### 3) Flip the app into SQLite mode
+
+Set:
+
+```bash
+export INVENTORY_BACKEND=sqlite
+```
+
+Restart the server after changing env vars.
+
+### 4) Verify
+
+- Check **Products**, **Vendors**, **Reorder Log**, **Approvals**, and **Stock Use**.
+- Confirm **Database** page shows non-zero row counts.
+
+### 5) Export snapshots (optional)
+
+In the app UI (ADMIN) on the **Database** page:
+
+- **Download Workbook (Excel)**: exports Products/Vendors/Reorder Log as a multi-sheet `.xlsx`
+- **Download Snapshot (PDF)**: quick printable snapshot (requires `fpdf2`)
+
+### Safety notes
+
+- You can always temporarily switch back by setting `INVENTORY_BACKEND=excel` and restarting.
+- Importing Excel → SQLite does not modify the Excel workbook.
+
 Open `http://127.0.0.1:8000` in a browser.
 
 ## Raspberry Pi notes (prod)

@@ -31,6 +31,16 @@
   </div>
 </div>
 
+<div class="form-card">
+  <div class="form-card__title">Migration checklist</div>
+  <div style="opacity:0.85;">
+    <div><strong>Step 1:</strong> Initialize SQLite DB</div>
+    <div><strong>Step 2:</strong> Import Excel → SQLite</div>
+    <div><strong>Step 3:</strong> Restart server with <span style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;">INVENTORY_BACKEND=sqlite</span></div>
+    <div><strong>Step 4:</strong> Verify counts below and spot-check Products/Vendors/Reorder Log</div>
+  </div>
+</div>
+
 <h3>Current SQLite DB</h3>
 <p><strong>Path:</strong> {{ db_path }}</p>
 
