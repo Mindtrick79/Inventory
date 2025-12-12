@@ -625,6 +625,25 @@ tbody tr:hover {
   opacity: 0.8;
 }
 
+.camera-status {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--radius, 6px);
+  padding: 0.6rem 0.75rem;
+  box-shadow: var(--shadow-sm);
+  font-weight: 650;
+}
+
+.camera-status:empty {
+  display: none;
+}
+
+.camera-status a {
+  color: var(--color-button-bg);
+  text-decoration: underline;
+  font-weight: 800;
+}
+
 form div {
   margin-bottom: 0.75rem;
 }
