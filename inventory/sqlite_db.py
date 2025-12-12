@@ -314,3 +314,182 @@ def get_pending_reorders(db_path: str) -> List[Dict[str, Any]]:
             ("PENDING",),
         ).fetchall()
     return [_row_json_to_dict(r["data_json"]) for r in rows]
+
+
+def insert_reorder_log(
+    db_path: str,
+    *,
+    user: str,
+    ip: str,
+    vendor: str,
+    items_description: str,
+    status: str = "PENDING",
+    notes: str = "",
+) -> str:
+    init_db(db_path)
+    timestamp = datetime.utcnow().isoformat()
+    entry: Dict[str, Any] = {
+        "Timestamp": timestamp,
+        "User": user,
+        "IP": ip,
+        "Vendor": vendor,
+        "Items": items_description,
+        "Status": status,
+        "Notes": notes,
+        "Approved Timestamp": "",
+        "Approved By": "",
+        "Approved IP": "",
+    }
+
+    with connect(db_path) as conn:
+        conn.execute(
+            """
+            INSERT INTO reorder_log(
+              timestamp, user, ip, vendor, status, items, notes,
+              approved_timestamp, approved_by, approved_ip, internal_notes,
+              data_json
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                timestamp,
+                user,
+                ip,
+                vendor,
+                status,
+                items_description,
+                notes,
+                "",
+                "",
+                "",
+                "",
+                _to_json(entry),
+            ),
+        )
+
+    return timestamp
+
+
+def update_reorder_status(
+    db_path: str,
+    *,
+    timestamp: str,
+    vendor: str,
+    new_status: str,
+    approved_by: str,
+    approved_ip: str,
+    internal_notes: str = "",
+) -> int:
+    init_db(db_path)
+    now = datetime.utcnow().isoformat()
+
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT id, data_json FROM reorder_log WHERE timestamp = ? AND vendor = ?",
+            (str(timestamp), str(vendor)),
+        ).fetchall()
+
+        updated = 0
+        for r in rows:
+            d = _row_json_to_dict(r["data_json"])
+            d["Status"] = new_status
+            d["Approved Timestamp"] = now
+            d["Approved By"] = approved_by
+            d["Approved IP"] = approved_ip
+            if internal_notes:
+                d["Internal Notes"] = internal_notes
+
+            cur = conn.execute(
+                """
+                UPDATE reorder_log
+                SET status = ?,
+                    approved_timestamp = ?,
+                    approved_by = ?,
+                    approved_ip = ?,
+                    internal_notes = ?,
+                    data_json = ?
+                WHERE id = ?
+                """,
+                (
+                    new_status,
+                    now,
+                    approved_by,
+                    approved_ip,
+                    internal_notes,
+                    _to_json(d),
+                    int(r["id"]),
+                ),
+            )
+            updated += int(cur.rowcount or 0)
+
+        return updated
+
+
+def adjust_product_quantity(
+    db_path: str,
+    *,
+    product_name: str,
+    delta: float,
+    user: str,
+    location: str = "",
+    notes: str = "",
+) -> Optional[Dict[str, Any]]:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT id, quantity_on_hand, data_json FROM products WHERE product_name = ?",
+            (str(product_name),),
+        ).fetchone()
+        if not row:
+            return None
+
+        current_qty = float(row["quantity_on_hand"] or 0)
+        new_qty = current_qty + float(delta)
+        if new_qty < 0:
+            new_qty = 0
+
+        product_dict = _row_json_to_dict(row["data_json"])
+        product_dict["Quantity on Hand"] = new_qty
+
+        ts = datetime.utcnow().isoformat()
+        tx_entry: Dict[str, Any] = {
+            "Timestamp": ts,
+            "User": user,
+            "Product Name": product_dict.get("Product Name", product_name),
+            "Delta": float(delta),
+            "New Quantity on Hand": new_qty,
+            "Location": location or str(product_dict.get("Location", "")),
+            "Notes": notes,
+        }
+
+        conn.execute(
+            """
+            UPDATE products
+            SET quantity_on_hand = ?, data_json = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (new_qty, _to_json(product_dict), datetime.utcnow().isoformat(), int(row["id"])),
+        )
+
+        conn.execute(
+            """
+            INSERT INTO transactions(timestamp, user, action, product_name, delta, location, notes, data_json)
+            VALUES (?,?,?,?,?,?,?,?)
+            """,
+            (
+                ts,
+                user,
+                "ADJUST",
+                str(product_name),
+                float(delta),
+                tx_entry.get("Location", ""),
+                notes,
+                _to_json(tx_entry),
+            ),
+        )
+
+    return {
+        "product_name": product_dict.get("Product Name", product_name),
+        "old_quantity": current_qty,
+        "new_quantity": new_qty,
+        "location": tx_entry["Location"],
+    }

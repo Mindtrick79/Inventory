@@ -17,6 +17,9 @@ from config import DB_PATH
 from .sqlite_db import get_all_products as sqlite_get_all_products
 from .sqlite_db import get_pending_reorders as sqlite_get_pending_reorders
 from .sqlite_db import get_reorder_log as sqlite_get_reorder_log
+from .sqlite_db import adjust_product_quantity as sqlite_adjust_product_quantity
+from .sqlite_db import insert_reorder_log as sqlite_insert_reorder_log
+from .sqlite_db import update_reorder_status as sqlite_update_reorder_status
 
 
 LOW_STOCK_STATUS = "LOW_STOCK"
@@ -271,6 +274,20 @@ def adjust_product_quantity(
     if the product was not found.
     """
 
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return sqlite_adjust_product_quantity(
+                DB_PATH,
+                product_name=product_name,
+                delta=delta,
+                user=user,
+                location=location,
+                notes=notes,
+            )
+        except Exception:
+            pass
+
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
     if master_df.empty or "Product Name" not in master_df.columns or "Quantity on Hand" not in master_df.columns:
         return None
@@ -491,6 +508,22 @@ def log_reorder(
     status: str = "PENDING",
     notes: str = "",
 ) -> None:
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            sqlite_insert_reorder_log(
+                DB_PATH,
+                user=user,
+                ip=ip,
+                vendor=vendor,
+                items_description=items_description,
+                status=status,
+                notes=notes,
+            )
+            return
+        except Exception:
+            pass
+
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
 
     timestamp = datetime.utcnow().isoformat()
@@ -599,6 +632,22 @@ def update_reorder_status(
     Rows are identified by (Timestamp, Vendor). This is simple and good enough for
     this internal tool; if duplicates ever happen, all matching rows are updated.
     """
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            sqlite_update_reorder_status(
+                DB_PATH,
+                timestamp=timestamp,
+                vendor=vendor,
+                new_status=new_status,
+                approved_by=approved_by,
+                approved_ip=approved_ip,
+                internal_notes=internal_notes,
+            )
+            return
+        except Exception:
+            pass
+
     master_df, tx_df, vendors_df, reorder_log_df = load_inventory_workbook()
     if reorder_log_df.empty:
         return
