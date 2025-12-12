@@ -1,12 +1,42 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Dashboard</h2>
-<p>Welcome to Roberts Inventory Manager.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Dashboard</h2>
+    <div class="page-toolbar__subtitle">Overview of inventory, reorders, and purchasing activity.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="btn btn--secondary" href="{{ url_for('products') }}">View Products</a>
+    <a class="btn btn--secondary" href="{{ url_for('reorder_reports') }}">Reorder Reports</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-card__label">Total Products</div>
+    <div class="kpi-card__value">{{ total_products }}</div>
+    <div class="kpi-card__hint">All items in inventory</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__label">Low Stock</div>
+    <div class="kpi-card__value">{{ low_stock_count }}</div>
+    <div class="kpi-card__hint">Items below threshold</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__label">Pending Approvals</div>
+    <div class="kpi-card__value">{{ pending_count }}</div>
+    <div class="kpi-card__hint">Requests waiting to be approved</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-card__label">Sent / Failed Today</div>
+    <div class="kpi-card__value">{{ sent_today }} / {{ failed_today }}</div>
+    <div class="kpi-card__hint">Vendor emails processed today</div>
+  </div>
+</div>
 
 <section>
   <h3>Summary</h3>
-  <p>Total products: {{ total_products }}</p>
-
   {% if analytics %}
   <div class="summary-cards">
     <div class="card">
@@ -43,14 +73,20 @@
     </div>
   </div>
 
-  <form method="get" class="date-filter-form">
-    <label for="start_date">Start date</label>
-    <input type="date" id="start_date" name="start_date" value="{{ analytics.start_date }}">
-
-    <label for="end_date">End date</label>
-    <input type="date" id="end_date" name="end_date" value="{{ analytics.end_date }}">
-
-    <button type="submit">Apply</button>
+  <form method="get" class="search-form search-form--toolbar" style="margin-top:0.75rem;">
+    <div class="search-form__row">
+      <div class="search-form__field">
+        <label for="start_date">Start date</label>
+        <input type="date" id="start_date" name="start_date" value="{{ analytics.start_date }}">
+      </div>
+      <div class="search-form__field">
+        <label for="end_date">End date</label>
+        <input type="date" id="end_date" name="end_date" value="{{ analytics.end_date }}">
+      </div>
+      <div class="search-form__actions">
+        <button type="submit" class="btn btn--primary btn--sm">Apply</button>
+      </div>
+    </div>
   </form>
 
   <div class="charts-grid">
@@ -68,9 +104,17 @@
     </div>
   </div>
 
+  <script type="application/json" id="analytics_json">{{ analytics|tojson }}</script>
+
   <script>
     (function() {
-      var analytics = {{ analytics|tojson }};
+      var el = document.getElementById('analytics_json');
+      var analytics = {};
+      try {
+        analytics = JSON.parse(el ? el.textContent : '{}');
+      } catch (e) {
+        analytics = {};
+      }
 
       var dayCtx = document.getElementById('spendPerDayChart');
       if (dayCtx && analytics.spend_by_day.labels.length) {
@@ -145,6 +189,7 @@
 <section>
   <h3>Low Stock Items</h3>
   {% if low_stock %}
+  <div class="table-wrap">
   <table>
     <thead>
       <tr>
@@ -169,8 +214,12 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-  <p>No low stock items.</p>
+  <div class="empty-state">
+    <div class="empty-state__title">No low stock items</div>
+    <div class="empty-state__hint">Everything looks good right now.</div>
+  </div>
   {% endif %}
 </section>
 {% endblock %}

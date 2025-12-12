@@ -406,6 +406,32 @@ def create_app():
         low_stock = get_low_stock_products()
         total_products = len(get_all_products())
 
+        pending_reorders = get_pending_reorders()
+        pending_count = len(pending_reorders)
+
+        # Daily operational KPIs from the reorder log
+        sent_today = 0
+        failed_today = 0
+        today = date.today()
+        try:
+            for r in get_reorder_log():
+                status = str(r.get("Status", "")).strip().upper()
+                approved_ts = str(r.get("Approved Timestamp", "") or "").strip()
+                if not approved_ts:
+                    continue
+                try:
+                    d = datetime.fromisoformat(approved_ts.replace("Z", "+00:00")).date()
+                except Exception:
+                    continue
+                if d != today:
+                    continue
+                if status == "SENT":
+                    sent_today += 1
+                elif status == "FAILED":
+                    failed_today += 1
+        except Exception:
+            pass
+
         # Optional date range filters for analytics (YYYY-MM-DD)
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
@@ -419,7 +445,11 @@ def create_app():
         return render_template(
             "index.html",
             low_stock=low_stock,
+            low_stock_count=len(low_stock),
             total_products=total_products,
+            pending_count=pending_count,
+            sent_today=sent_today,
+            failed_today=failed_today,
             analytics=analytics,
             settings=app.config["APP_SETTINGS"],
         )
