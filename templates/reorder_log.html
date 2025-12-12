@@ -17,7 +17,7 @@
     <div class="empty-state__hint">Once requests are submitted and approved, you’ll see them here.</div>
   </div>
 {% else %}
-  <div class="table-wrap">
+  <div class="table-wrap table-wrap--compact">
   <table>
     <thead>
       <tr>
@@ -41,10 +41,10 @@
     <tbody>
       {% for row in log_rows %}
       <tr>
-        <td>{{ row['Timestamp'] }}</td>
+        <td class="table-cell--nowrap">{{ row['Timestamp'] }}</td>
         <td>{{ row['User'] }}</td>
         <td>{{ row['IP'] }}</td>
-        <td>{{ row['Vendor'] }}</td>
+        <td class="table-cell--nowrap">{{ row['Vendor'] }}</td>
         <td>{{ row.get('PO Number', '') }}</td>
         <td>{{ row.get('Delivery Method', '') }}</td>
         <td>{{ row.get('Pickup By', '') }}</td>

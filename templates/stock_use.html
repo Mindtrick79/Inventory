@@ -27,7 +27,7 @@
 </form>
 
 {% if products %}
-<div class="table-wrap">
+<div class="table-wrap table-wrap--compact">
 <table>
   <thead>
     <tr>
@@ -42,8 +42,8 @@
   <tbody>
     {% for p in products %}
     <tr>
-      <td>{{ p['Product Name'] }}</td>
-      <td>{{ p['Location'] }}</td>
+      <td class="table-cell--nowrap">{{ p['Product Name'] }}</td>
+      <td class="table-cell--nowrap">{{ p['Location'] }}</td>
       <td>{{ p['Quantity on Hand'] }}</td>
       <td>{{ p['Container Unit'] }}</td>
       <td>

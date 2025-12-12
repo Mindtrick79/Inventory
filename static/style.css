@@ -386,6 +386,35 @@ section {
   margin-top: 0;
 }
 
+.table-wrap--compact table th,
+.table-wrap--compact table td {
+  padding: calc(0.35rem * var(--spacing-scale, 1)) calc(0.55rem * var(--spacing-scale, 1));
+  font-size: 0.85rem;
+}
+
+.table-wrap--compact table th {
+  font-weight: 800;
+}
+
+.table-wrap--compact table tbody tr:hover {
+  transform: none;
+}
+
+.table-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.table-actions .btn {
+  white-space: nowrap;
+}
+
+.table-cell--nowrap {
+  white-space: nowrap;
+}
+
 thead th {
   position: sticky;
   top: 0;
