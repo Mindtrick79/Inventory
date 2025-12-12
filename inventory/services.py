@@ -457,6 +457,8 @@ def send_reorder_email(
     subject = f"{prefix}{vendor}"
 
     delivery_method = str((order_meta or {}).get("delivery_method") or "SHIP").upper()
+    po_number = str((order_meta or {}).get("po_number") or "").strip()
+    pickup_by = str((order_meta or {}).get("pickup_by") or "").strip()
     needed_by = str((order_meta or {}).get("needed_by") or "").strip()
     delivery_notes = str((order_meta or {}).get("delivery_notes") or "").strip()
 
@@ -464,12 +466,16 @@ def send_reorder_email(
 
     body_lines = [
         f"Vendor: {vendor}",
+        f"PO Number: {po_number}" if po_number else "",
         f"Delivery: {delivery_label}",
     ]
+    if pickup_by:
+        body_lines.append(f"Pickup By: {pickup_by}")
     if needed_by:
         body_lines.append(f"Needed By: {needed_by}")
     if delivery_notes:
         body_lines.append(f"Delivery Notes: {delivery_notes}")
+    body_lines = [line for line in body_lines if line]
     body_lines.extend(
         [
             "",
@@ -598,8 +604,12 @@ def send_reorder_email(
             pdf.set_font("Helvetica", "B", 12)
             pdf.cell(0, 7, "Purchase Order", ln=1)
             pdf.set_font("Helvetica", "", 10)
+            if po_number:
+                pdf.cell(0, 5, f"PO Number: {po_number}", ln=1)
             pdf.cell(0, 5, f"Vendor: {vendor}", ln=1)
             pdf.cell(0, 5, f"Delivery: {delivery_label}", ln=1)
+            if pickup_by:
+                pdf.cell(0, 5, f"Pickup By: {pickup_by}", ln=1)
             if needed_by:
                 pdf.cell(0, 5, f"Needed By: {needed_by}", ln=1)
             if delivery_notes:
@@ -795,6 +805,11 @@ def update_reorder_status(
     approved_by: str,
     approved_ip: str,
     internal_notes: str = "",
+    po_number: str = "",
+    pickup_by: str = "",
+    delivery_method: str = "",
+    needed_by: str = "",
+    delivery_notes: str = "",
 ) -> None:
     """Update the status and approval metadata for a reorder log row.
 
@@ -812,6 +827,13 @@ def update_reorder_status(
                 approved_by=approved_by,
                 approved_ip=approved_ip,
                 internal_notes=internal_notes,
+                meta={
+                    "PO Number": po_number,
+                    "Pickup By": pickup_by,
+                    "Delivery Method": delivery_method,
+                    "Needed By": needed_by,
+                    "Delivery Notes": delivery_notes,
+                },
             )
             return
         except Exception:
@@ -839,6 +861,19 @@ def update_reorder_status(
         reorder_log_df["Internal Notes"] = ""
     if internal_notes:
         reorder_log_df.loc[mask, "Internal Notes"] = internal_notes
+
+    # Persist PO / delivery metadata for reporting
+    for col_name, value in {
+        "PO Number": po_number,
+        "Pickup By": pickup_by,
+        "Delivery Method": delivery_method,
+        "Needed By": needed_by,
+        "Delivery Notes": delivery_notes,
+    }.items():
+        if col_name not in reorder_log_df.columns:
+            reorder_log_df[col_name] = ""
+        if value:
+            reorder_log_df.loc[mask, col_name] = value
 
     save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
 

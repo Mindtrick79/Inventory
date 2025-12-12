@@ -378,6 +378,7 @@ def update_reorder_status(
     approved_by: str,
     approved_ip: str,
     internal_notes: str = "",
+    meta: Optional[Dict[str, Any]] = None,
 ) -> int:
     init_db(db_path)
     now = datetime.utcnow().isoformat()
@@ -397,6 +398,14 @@ def update_reorder_status(
             d["Approved IP"] = approved_ip
             if internal_notes:
                 d["Internal Notes"] = internal_notes
+
+            meta = meta or {}
+            for k, v in meta.items():
+                if v is None:
+                    continue
+                sv = str(v).strip()
+                if sv:
+                    d[str(k)] = sv
 
             cur = conn.execute(
                 """

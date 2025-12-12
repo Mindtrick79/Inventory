@@ -716,6 +716,8 @@ def create_app():
             user = form.get("user", "approver")
             ip = request.remote_addr or ""
             delivery_method = (form.get("delivery_method") or "SHIP").strip().upper()
+            po_number = (form.get("po_number") or "").strip()
+            pickup_by = (form.get("pickup_by") or "").strip()
             needed_by = (form.get("needed_by") or "").strip()
             delivery_notes = (form.get("delivery_notes") or "").strip()
             approval_notes = form.get("approval_notes", "").strip()
@@ -749,6 +751,8 @@ def create_app():
                         extra_cc=extra_cc,
                         order_meta={
                             "delivery_method": delivery_method,
+                            "po_number": po_number,
+                            "pickup_by": pickup_by,
                             "needed_by": needed_by,
                             "delivery_notes": delivery_notes,
                             "approved_by": user,
@@ -764,6 +768,11 @@ def create_app():
                     approved_by=user,
                     approved_ip=ip,
                     internal_notes=internal_notes,
+                    po_number=po_number,
+                    pickup_by=pickup_by,
+                    delivery_method=delivery_method,
+                    needed_by=needed_by,
+                    delivery_notes=delivery_notes,
                 )
                 flash(f"Reorder {new_status}.", "success")
             else:

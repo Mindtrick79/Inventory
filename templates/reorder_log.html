@@ -15,6 +15,10 @@
         <th>User</th>
         <th>IP</th>
         <th>Vendor</th>
+        <th>PO #</th>
+        <th>Delivery</th>
+        <th>Pickup By</th>
+        <th>Needed By</th>
         <th>Items</th>
         <th>Status</th>
         <th>Notes</th>
@@ -31,6 +35,10 @@
         <td>{{ row['User'] }}</td>
         <td>{{ row['IP'] }}</td>
         <td>{{ row['Vendor'] }}</td>
+        <td>{{ row.get('PO Number', '') }}</td>
+        <td>{{ row.get('Delivery Method', '') }}</td>
+        <td>{{ row.get('Pickup By', '') }}</td>
+        <td>{{ row.get('Needed By', '') }}</td>
         <td>{{ row['Items'] }}</td>
         <td>
           {% if row['Status'] %}
