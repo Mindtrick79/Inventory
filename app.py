@@ -6,6 +6,7 @@ import hashlib
 from functools import wraps
 from datetime import timedelta
 import smtplib
+import re
 from inventory.services import (
     get_all_products,
     get_low_stock_products,
@@ -227,9 +228,11 @@ def create_app():
             password = request.form.get("password", "")
             role = request.form.get("role", "VIEW").strip().upper() or "VIEW"
             display_name = request.form.get("display_name", "").strip()
+            license_number = request.form.get("license_number", "").strip()
             phone = request.form.get("phone", "").strip()
             email = request.form.get("email", "").strip()
             default_truck = request.form.get("default_truck", "").strip()
+            photo = request.files.get("photo")
 
             if not username:
                 flash("Username is required.", "danger")
@@ -256,9 +259,23 @@ def create_app():
 
             existing["role"] = role
             existing["display_name"] = display_name
+            existing["license_number"] = license_number
             existing["phone"] = phone
             existing["email"] = email
             existing["default_truck"] = default_truck
+
+            if photo and photo.filename:
+                _, ext = os.path.splitext(photo.filename)
+                ext = ext.lower()
+                if ext in {".png", ".jpg", ".jpeg", ".gif"}:
+                    safe_user = re.sub(r"[^a-zA-Z0-9_-]+", "_", username) or "user"
+                    rel_dir = os.path.join("uploads", "tech_photos")
+                    abs_dir = os.path.join(BASE_DIR, "static", rel_dir)
+                    os.makedirs(abs_dir, exist_ok=True)
+                    filename = f"{safe_user}{ext}"
+                    abs_path = os.path.join(abs_dir, filename)
+                    photo.save(abs_path)
+                    existing["photo_path"] = os.path.join(rel_dir, filename).replace("\\", "/")
 
             if password:
                 existing["password_hash"] = _hash_password(username, password)
@@ -273,6 +290,8 @@ def create_app():
                 "username": u.get("username", ""),
                 "role": u.get("role", "VIEW"),
                 "display_name": u.get("display_name", ""),
+                "license_number": u.get("license_number", ""),
+                "photo_path": u.get("photo_path", ""),
                 "phone": u.get("phone", ""),
                 "email": u.get("email", ""),
                 "default_truck": u.get("default_truck", ""),
@@ -297,6 +316,8 @@ def create_app():
                 session["username"] = user["username"]
                 session["role"] = user.get("role", "VIEW")
                 session["display_name"] = user.get("display_name", "")
+                session["license_number"] = user.get("license_number", "")
+                session["photo_path"] = user.get("photo_path", "")
                 session["phone"] = user.get("phone", "")
                 session["email"] = user.get("email", "")
                 session["default_truck"] = user.get("default_truck", "")
@@ -314,6 +335,8 @@ def create_app():
         session.pop("username", None)
         session.pop("role", None)
         session.pop("display_name", None)
+        session.pop("license_number", None)
+        session.pop("photo_path", None)
         session.pop("phone", None)
         session.pop("email", None)
         session.pop("default_truck", None)
@@ -681,6 +704,8 @@ def create_app():
             display_name = session.get("display_name", "").strip()
             phone = session.get("phone", "").strip()
             email = session.get("email", "").strip()
+            license_number = session.get("license_number", "").strip()
+            photo_path = session.get("photo_path", "").strip()
 
             try:
                 amount = float(amount_raw)
@@ -758,16 +783,38 @@ def create_app():
                             .replace("'", "&#39;")
                         )
 
+                    inline_abs_path = ""
+                    if photo_path:
+                        inline_abs_path = os.path.join(BASE_DIR, "static", photo_path)
+                        if not os.path.exists(inline_abs_path):
+                            inline_abs_path = ""
+
+                    photo_cell_html = ""
+                    if inline_abs_path:
+                        photo_cell_html = """
+        <td style=\"width:110px; vertical-align:top; padding-right:12px;\">
+          <img src=\"cid:{{INLINE_IMAGE_CID}}\" alt=\"Technician\" style=\"width:96px; height:96px; object-fit:cover; border-radius:6px; border:1px solid #ddd;\" />
+        </td>
+"""
+
                     html_body = f"""
 <html>
   <body>
-    <h2>Technician Checkout</h2>
-    <p><strong>Technician:</strong> {_esc(display_name or '(not set)')} ({_esc(user)})</p>
-    <p><strong>Phone:</strong> {_esc(phone or '(not set)')}</p>
-    <p><strong>Email:</strong> {_esc(email or '(not set)')}</p>
-    <p><strong>Truck:</strong> {_esc(truck or '(not set)')}</p>
-    <p><strong>Job:</strong> {_esc(job or '(not set)')}</p>
-    <p><strong>Location:</strong> {_esc(result['location'])}</p>
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse; width:100%; max-width:900px; margin-bottom:12px;">
+      <tr>
+{photo_cell_html}
+        <td style="vertical-align:top;">
+          <h2 style="margin:0 0 6px 0;">Technician Checkout</h2>
+          <div><strong>Technician:</strong> {_esc(display_name or '(not set)')} ({_esc(user)})</div>
+          <div><strong>License #:</strong> {_esc(license_number or '(not set)')}</div>
+          <div><strong>Phone:</strong> {_esc(phone or '(not set)')}</div>
+          <div><strong>Email:</strong> {_esc(email or '(not set)')}</div>
+          <div><strong>Truck:</strong> {_esc(truck or '(not set)')}</div>
+          <div><strong>Job:</strong> {_esc(job or '(not set)')}</div>
+          <div><strong>Location:</strong> {_esc(result['location'])}</div>
+        </td>
+      </tr>
+    </table>
 
     <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%; max-width:900px;">
       <thead>
@@ -802,7 +849,14 @@ def create_app():
 """
 
                     if to_email:
-                        ok = send_html_email(subject, text_body, html_body, [to_email], cc_addresses=cc_list)
+                        ok = send_html_email(
+                            subject,
+                            text_body,
+                            html_body,
+                            [to_email],
+                            cc_addresses=cc_list,
+                            inline_image_path=inline_abs_path or None,
+                        )
                         if ok:
                             flash("Stock use recorded and checkout email sent.", "success")
                         else:

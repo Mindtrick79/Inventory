@@ -3,6 +3,8 @@ from typing import List, Dict, Any, DefaultDict, Optional
 from collections import defaultdict
 import smtplib
 from email.message import EmailMessage
+from email.utils import make_msgid
+import mimetypes
 
 import pandas as pd
 
@@ -128,7 +130,14 @@ def send_basic_email(subject: str, body: str, to_addresses: List[str]) -> bool:
         return False
 
 
-def send_html_email(subject: str, text_body: str, html_body: str, to_addresses: List[str], cc_addresses: Optional[List[str]] = None) -> bool:
+def send_html_email(
+    subject: str,
+    text_body: str,
+    html_body: str,
+    to_addresses: List[str],
+    cc_addresses: Optional[List[str]] = None,
+    inline_image_path: Optional[str] = None,
+) -> bool:
     settings = load_settings()
     smtp_cfg = _resolve_smtp_config(settings)
 
@@ -143,6 +152,29 @@ def send_html_email(subject: str, text_body: str, html_body: str, to_addresses: 
 
     msg.set_content(text_body)
     msg.add_alternative(html_body, subtype="html")
+
+    if inline_image_path:
+        try:
+            with open(inline_image_path, "rb") as f:
+                img_data = f.read()
+            mime_type, _ = mimetypes.guess_type(inline_image_path)
+            if not mime_type:
+                mime_type = "application/octet-stream"
+            maintype, subtype = mime_type.split("/", 1)
+            cid = make_msgid(domain="robertspest.local")
+            cid_ref = cid[1:-1] if cid.startswith("<") and cid.endswith(">") else cid
+
+            # Replace placeholder token in HTML with the generated CID reference.
+            if "{{INLINE_IMAGE_CID}}" in html_body:
+                html_body = html_body.replace("{{INLINE_IMAGE_CID}}", cid_ref)
+                msg.set_payload([msg.get_payload()[0]])
+                msg.add_alternative(html_body, subtype="html")
+
+            html_part = msg.get_payload()[-1]
+            html_part.add_related(img_data, maintype=maintype, subtype=subtype, cid=cid)
+            msg["X-Inline-Image-CID"] = cid_ref
+        except Exception:
+            pass
 
     recipients = list(to_addresses) + list(cc_addresses)
 

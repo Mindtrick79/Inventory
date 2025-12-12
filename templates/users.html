@@ -12,6 +12,8 @@
         <th>Username</th>
         <th>Role</th>
         <th>Name</th>
+        <th>License #</th>
+        <th>Photo</th>
         <th>Phone</th>
         <th>Email</th>
         <th>Default Truck</th>
@@ -24,11 +26,17 @@
         <td>{{ u.username }}</td>
         <td>{{ u.role }}</td>
         <td>{{ u.display_name }}</td>
+        <td>{{ u.license_number }}</td>
+        <td>
+          {% if u.photo_path %}
+            <img src="{{ url_for('static', filename=u.photo_path) }}" alt="Photo" style="max-height: 48px; border-radius: 4px;">
+          {% endif %}
+        </td>
         <td>{{ u.phone }}</td>
         <td>{{ u.email }}</td>
         <td>{{ u.default_truck }}</td>
         <td>
-          <button type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}', '{{ u.display_name }}', '{{ u.phone }}', '{{ u.email }}', '{{ u.default_truck }}')">Edit</button>
+          <button type="button" onclick="editUser('{{ u.username }}', '{{ u.role }}', '{{ u.display_name }}', '{{ u.license_number }}', '{{ u.phone }}', '{{ u.email }}', '{{ u.default_truck }}')">Edit</button>
         </td>
       </tr>
       {% endfor %}
@@ -41,7 +49,7 @@
 
 <section>
   <h3>Add / Update User</h3>
-  <form method="post">
+  <form method="post" enctype="multipart/form-data">
     <div>
       <label for="username">Username</label>
       <input type="text" id="username" name="username" required>
@@ -49,6 +57,14 @@
     <div>
       <label for="display_name">Name</label>
       <input type="text" id="display_name" name="display_name" placeholder="Technician name">
+    </div>
+    <div>
+      <label for="license_number">License #</label>
+      <input type="text" id="license_number" name="license_number" placeholder="State license number">
+    </div>
+    <div>
+      <label for="photo">Headshot Photo</label>
+      <input type="file" id="photo" name="photo" accept="image/*">
     </div>
     <div>
       <label for="phone">Phone</label>
@@ -81,9 +97,10 @@
 </section>
 
 <script>
-  function editUser(username, role, displayName, phone, email, defaultTruck) {
+  function editUser(username, role, displayName, licenseNumber, phone, email, defaultTruck) {
     var uInput = document.getElementById('username');
     var displayNameInput = document.getElementById('display_name');
+    var licenseNumberInput = document.getElementById('license_number');
     var phoneInput = document.getElementById('phone');
     var emailInput = document.getElementById('email');
     var defaultTruckInput = document.getElementById('default_truck');
@@ -93,6 +110,9 @@
     }
     if (displayNameInput) {
       displayNameInput.value = displayName || '';
+    }
+    if (licenseNumberInput) {
+      licenseNumberInput.value = licenseNumber || '';
     }
     if (phoneInput) {
       phoneInput.value = phone || '';
