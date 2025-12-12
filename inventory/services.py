@@ -26,6 +26,7 @@ from .sqlite_db import get_all_vendors as sqlite_get_all_vendors
 from .sqlite_db import upsert_vendor as sqlite_upsert_vendor
 from .sqlite_db import upsert_product as sqlite_upsert_product
 from .sqlite_db import bulk_replace_product_field as sqlite_bulk_replace_product_field
+from .sqlite_db import get_product_by_name as sqlite_get_product_by_name
 
 
 LOW_STOCK_STATUS = "LOW_STOCK"
@@ -363,6 +364,14 @@ def adjust_product_quantity(
 
 def get_product_by_name(product_name: str) -> Optional[Dict[str, Any]]:
     """Return a single product row by Product Name, or None if not found."""
+    backend = (os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower()
+    if backend == "sqlite":
+        try:
+            return sqlite_get_product_by_name(DB_PATH, product_name)
+        except Exception:
+            # Fall back to Excel
+            pass
+
     master_df, _, _, _ = load_inventory_workbook()
     if master_df.empty or "Product Name" not in master_df.columns:
         return None
