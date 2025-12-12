@@ -794,6 +794,29 @@ def get_reorder_analytics(start_date: Optional[str], end_date: Optional[str]) ->
 
     master_df, _, _, reorder_log_df = load_inventory_workbook()
 
+    # Compute effective date range first so the dashboard date inputs always prefill.
+    today = datetime.utcnow().date()
+    if start_date:
+        try:
+            start_dt = datetime.fromisoformat(start_date).date()
+        except ValueError:
+            start_dt = datetime(today.year, today.month, 1).date()
+    else:
+        start_dt = datetime(today.year, today.month, 1).date()
+
+    if end_date:
+        try:
+            end_dt = datetime.fromisoformat(end_date).date()
+        except ValueError:
+            # Default: last day of current month
+            next_month = (datetime(today.year, today.month, 28) + pd.Timedelta(days=4)).date().replace(day=1)
+            end_dt = next_month - pd.Timedelta(days=1)
+            end_dt = end_dt.date() if hasattr(end_dt, "date") else end_dt
+    else:
+        next_month = (datetime(today.year, today.month, 28) + pd.Timedelta(days=4)).date().replace(day=1)
+        end_dt = next_month - pd.Timedelta(days=1)
+        end_dt = end_dt.date() if hasattr(end_dt, "date") else end_dt
+
     # Default empty structure for when there is no data
     empty_result: Dict[str, Any] = {
         "total_spend": 0.0,
@@ -804,6 +827,8 @@ def get_reorder_analytics(start_date: Optional[str], end_date: Optional[str]) ->
         "spend_by_day": {"labels": [], "data": []},
         "spend_by_vendor": {"labels": [], "data": []},
         "top_products": {"labels": [], "data": []},
+        "start_date": start_dt.isoformat(),
+        "end_date": end_dt.isoformat(),
     }
 
     if reorder_log_df.empty or "Status" not in reorder_log_df.columns:
@@ -824,25 +849,7 @@ def get_reorder_analytics(start_date: Optional[str], end_date: Optional[str]) ->
     if df.empty:
         return empty_result
 
-    # Date range filtering
-    min_date = df["Timestamp_dt"].min().date()
-    max_date = df["Timestamp_dt"].max().date()
-
-    if start_date:
-        try:
-            start_dt = datetime.fromisoformat(start_date).date()
-        except ValueError:
-            start_dt = min_date
-    else:
-        start_dt = min_date
-
-    if end_date:
-        try:
-            end_dt = datetime.fromisoformat(end_date).date()
-        except ValueError:
-            end_dt = max_date
-    else:
-        end_dt = max_date
+    # Date range filtering (use the effective range computed above)
 
     mask = (df["Timestamp_dt"].dt.date >= start_dt) & (df["Timestamp_dt"].dt.date <= end_dt)
     df = df[mask]

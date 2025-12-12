@@ -388,7 +388,7 @@ def create_app():
         # Optional date range filters for analytics (YYYY-MM-DD)
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
-        if not start_date and not end_date:
+        if not start_date or not end_date:
             today = date.today()
             start_date = date(today.year, today.month, 1).isoformat()
             last_day = calendar.monthrange(today.year, today.month)[1]
