@@ -644,6 +644,41 @@ tbody tr:hover {
   font-weight: 800;
 }
 
+.camera-help {
+  border: 1px solid rgba(191, 135, 0, 0.35);
+  background: rgba(255, 248, 235, 0.95);
+  border-radius: var(--radius, 6px);
+  padding: 0.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.camera-help:empty {
+  display: none;
+}
+
+.camera-help__title {
+  font-weight: 900;
+  margin-bottom: 0.35rem;
+}
+
+.camera-help__body {
+  opacity: 0.92;
+  margin-bottom: 0.6rem;
+}
+
+.camera-help__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.camera-help__hint {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
 form div {
   margin-bottom: 0.75rem;
 }

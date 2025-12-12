@@ -38,6 +38,59 @@
     statusEl.appendChild(wrap);
   }
 
+  function renderHttpsHelp(helpEl) {
+    if (!helpEl) return;
+
+    var host = (window.location && window.location.hostname) ? window.location.hostname : '';
+    var isLocal = (host === 'localhost' || host === '127.0.0.1');
+    var isHttp = (window.location && window.location.protocol === 'http:');
+
+    // Only show on insecure contexts for non-localhost.
+    if (!isHttp || isLocal || window.isSecureContext !== false) {
+      helpEl.textContent = '';
+      return;
+    }
+
+    helpEl.textContent = '';
+
+    var title = document.createElement('div');
+    title.className = 'camera-help__title';
+    title.textContent = 'Camera needs HTTPS';
+    helpEl.appendChild(title);
+
+    var body = document.createElement('div');
+    body.className = 'camera-help__body';
+    body.appendChild(document.createTextNode('Modern browsers only allow webcam access on secure contexts (HTTPS or localhost).'));
+    helpEl.appendChild(body);
+
+    var actions = document.createElement('div');
+    actions.className = 'camera-help__actions';
+
+    var httpsUrl = window.location.href.replace(/^http:/i, 'https:');
+    var openLink = document.createElement('a');
+    openLink.href = httpsUrl;
+    openLink.target = '_blank';
+    openLink.rel = 'noopener';
+    openLink.className = 'btn btn--secondary btn--sm';
+    openLink.textContent = 'Open HTTPS version';
+    actions.appendChild(openLink);
+
+    var readmeLink = document.createElement('a');
+    readmeLink.href = 'https://github.com/Mindtrick79/Inventory#https-required-for-camera-on-laptopsphones';
+    readmeLink.target = '_blank';
+    readmeLink.rel = 'noopener';
+    readmeLink.className = 'btn btn--ghost btn--sm';
+    readmeLink.textContent = 'HTTPS setup guide';
+    actions.appendChild(readmeLink);
+
+    helpEl.appendChild(actions);
+
+    var hint = document.createElement('div');
+    hint.className = 'camera-help__hint';
+    hint.textContent = 'On Raspberry Pi, use Caddy reverse proxy with tls internal to serve https://<PI_IP>/ and keep Flask on :8000.';
+    helpEl.appendChild(hint);
+  }
+
   function stopStream(stream) {
     try {
       if (stream) {
@@ -84,6 +137,7 @@
     opts.openBtnId = opts.openBtnId || 'camera_open_btn';
     opts.clearBtnId = opts.clearBtnId || 'camera_clear_btn';
     opts.statusId = opts.statusId || 'camera_status';
+    opts.httpsHelpId = opts.httpsHelpId || 'camera_https_help';
 
     opts.modalId = opts.modalId || 'camera_modal';
     opts.closeBtnId = opts.closeBtnId || 'camera_close_btn';
@@ -97,8 +151,11 @@
     var openBtn = _q(opts.openBtnId);
     var clearBtn = _q(opts.clearBtnId);
     var statusEl = _q(opts.statusId);
+    var httpsHelpEl = _q(opts.httpsHelpId);
 
     if (!input || !openBtn || !clearBtn) return;
+
+    renderHttpsHelp(httpsHelpEl);
 
     function clearImage() {
       try {
