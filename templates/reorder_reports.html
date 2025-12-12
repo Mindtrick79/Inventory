@@ -1,33 +1,65 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Reorder Reports</h2>
 
-<div class="form-actions">
-  <a class="button-link" href="{{ url_for('reorder_reports_export_xlsx', **filters) }}">Export Excel</a>
-  <a class="button-link" href="{{ url_for('reorder_reports_export_pdf', **filters) }}">Export PDF</a>
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Reorder Reports</h2>
+    <div class="page-toolbar__subtitle">Filter by vendor, PO #, date range, and export the exact view.</div>
+  </div>
+  <div class="page-toolbar__actions">
+    <a class="button-link" href="{{ url_for('reorder_reports_export_xlsx', **filters) }}">Export Excel</a>
+    <a class="button-link" href="{{ url_for('reorder_reports_export_pdf', **filters) }}">Export PDF</a>
+  </div>
 </div>
 
-<form method="get" class="search-form">
-  <label>Filters</label>
-  <input type="date" name="start_date" value="{{ filters.start_date }}" placeholder="Start date">
-  <input type="date" name="end_date" value="{{ filters.end_date }}" placeholder="End date">
-  <input type="text" name="vendor" value="{{ filters.vendor }}" placeholder="Vendor">
-  <input type="text" name="po_number" value="{{ filters.po_number }}" placeholder="PO #">
-  <input type="text" name="pickup_by" value="{{ filters.pickup_by }}" placeholder="Pickup By">
-  <input type="text" name="approved_by" value="{{ filters.approved_by }}" placeholder="Approved By">
-  <select name="delivery_method">
-    <option value="">Delivery (Any)</option>
-    <option value="SHIP" {% if filters.delivery_method == 'SHIP' %}selected{% endif %}>SHIP</option>
-    <option value="PICKUP" {% if filters.delivery_method == 'PICKUP' %}selected{% endif %}>PICKUP</option>
-  </select>
-  <select name="status">
-    <option value="">Status (Any)</option>
-    {% for s in statuses %}
-      <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
-    {% endfor %}
-  </select>
-  <button type="submit">Apply</button>
-  <a class="button-link" href="{{ url_for('reorder_reports') }}">Reset</a>
+<form method="get" class="search-form search-form--toolbar">
+  <div class="search-form__row">
+    <div class="search-form__field">
+      <label>Start</label>
+      <input type="date" name="start_date" value="{{ filters.start_date }}" placeholder="Start date">
+    </div>
+    <div class="search-form__field">
+      <label>End</label>
+      <input type="date" name="end_date" value="{{ filters.end_date }}" placeholder="End date">
+    </div>
+    <div class="search-form__field">
+      <label>Vendor</label>
+      <input type="text" name="vendor" value="{{ filters.vendor }}" placeholder="Vendor">
+    </div>
+    <div class="search-form__field">
+      <label>PO #</label>
+      <input type="text" name="po_number" value="{{ filters.po_number }}" placeholder="PO #">
+    </div>
+    <div class="search-form__field">
+      <label>Pickup By</label>
+      <input type="text" name="pickup_by" value="{{ filters.pickup_by }}" placeholder="Pickup By">
+    </div>
+    <div class="search-form__field">
+      <label>Approved By</label>
+      <input type="text" name="approved_by" value="{{ filters.approved_by }}" placeholder="Approved By">
+    </div>
+    <div class="search-form__field">
+      <label>Delivery</label>
+      <select name="delivery_method">
+        <option value="">Any</option>
+        <option value="SHIP" {% if filters.delivery_method == 'SHIP' %}selected{% endif %}>SHIP</option>
+        <option value="PICKUP" {% if filters.delivery_method == 'PICKUP' %}selected{% endif %}>PICKUP</option>
+      </select>
+    </div>
+    <div class="search-form__field">
+      <label>Status</label>
+      <select name="status">
+        <option value="">Any</option>
+        {% for s in statuses %}
+          <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="search-form__actions">
+      <button type="submit">Apply</button>
+      <a class="button-link" href="{{ url_for('reorder_reports') }}">Reset</a>
+    </div>
+  </div>
 </form>
 
 {% if summary %}
@@ -68,6 +100,7 @@
   {% if not rows %}
     <p>No rows match the current filters.</p>
   {% else %}
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -102,6 +135,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   {% endif %}
 </section>
 
