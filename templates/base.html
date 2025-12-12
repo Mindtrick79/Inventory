@@ -45,31 +45,31 @@
       <nav>
         {% set role = session.get('role', 'VIEW') %}
 
-        <a href="{{ url_for('index') }}">Dashboard</a>
-        <a href="{{ url_for('products') }}">Products</a>
-        <a href="{{ url_for('reorder_log') }}">Reorder Log</a>
-        <a href="{{ url_for('reorder_reports') }}">Reorder Reports</a>
-        <a href="{{ url_for('theme_view') }}">Theme</a>
+        <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}nav-active{% endif %}">Dashboard</a>
+        <a href="{{ url_for('products') }}" class="{% if request.endpoint == 'products' %}nav-active{% endif %}">Products</a>
+        <a href="{{ url_for('reorder_log') }}" class="{% if request.endpoint == 'reorder_log' %}nav-active{% endif %}">Reorder Log</a>
+        <a href="{{ url_for('reorder_reports') }}" class="{% if request.endpoint in ['reorder_reports','reorder_reports_export_xlsx','reorder_reports_export_pdf'] %}nav-active{% endif %}">Reorder Reports</a>
+        <a href="{{ url_for('theme_view') }}" class="{% if request.endpoint == 'theme_view' %}nav-active{% endif %}">Theme</a>
 
         {# Request-level and above: can create reorders and pricing requests #}
         {% if role in ['REQUEST', 'APPROVER', 'ADMIN'] %}
-          <a href="{{ url_for('reorder') }}">Reorder</a>
-          <a href="{{ url_for('pricing_request') }}">Pricing Request</a>
-          <a href="{{ url_for('stock_use') }}">Stock Use</a>
+          <a href="{{ url_for('reorder') }}" class="{% if request.endpoint == 'reorder' %}nav-active{% endif %}">Reorder</a>
+          <a href="{{ url_for('pricing_request') }}" class="{% if request.endpoint == 'pricing_request' %}nav-active{% endif %}">Pricing Request</a>
+          <a href="{{ url_for('stock_use') }}" class="{% if request.endpoint == 'stock_use' %}nav-active{% endif %}">Stock Use</a>
         {% endif %}
 
         {# Approver-level and above: can see approvals #}
         {% if role in ['APPROVER', 'ADMIN'] %}
-          <a href="{{ url_for('approvals') }}">Approvals</a>
+          <a href="{{ url_for('approvals') }}" class="{% if request.endpoint == 'approvals' %}nav-active{% endif %}">Approvals</a>
         {% endif %}
 
         {# Admin-only: vendors, users, units, and settings #}
         {% if role == 'ADMIN' %}
-          <a href="{{ url_for('vendors') }}">Vendors</a>
-          <a href="{{ url_for('manage_users') }}">Users</a>
-          <a href="{{ url_for('manage_units') }}">Units &amp; Labels</a>
-          <a href="{{ url_for('db_admin') }}">Database</a>
-          <a href="{{ url_for('settings_view') }}">Settings</a>
+          <a href="{{ url_for('vendors') }}" class="{% if request.endpoint in ['vendors','vendor_new'] %}nav-active{% endif %}">Vendors</a>
+          <a href="{{ url_for('manage_users') }}" class="{% if request.endpoint in ['manage_users','request_account'] %}nav-active{% endif %}">Users</a>
+          <a href="{{ url_for('manage_units') }}" class="{% if request.endpoint == 'manage_units' %}nav-active{% endif %}">Units &amp; Labels</a>
+          <a href="{{ url_for('db_admin') }}" class="{% if request.endpoint == 'db_admin' %}nav-active{% endif %}">Database</a>
+          <a href="{{ url_for('settings_view') }}" class="{% if request.endpoint == 'settings_view' %}nav-active{% endif %}">Settings</a>
         {% endif %}
 
         {% if session.get('username') %}
@@ -88,14 +88,34 @@
     <main>
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-          <ul class="flash-messages">
+          <div class="toast-stack" id="toast_stack">
             {% for category, message in messages %}
-              <li class="flash-{{ category }}">{{ message }}</li>
+              <div class="toast toast-{{ category }}" role="status" tabindex="0">
+                <div class="toast__message">{{ message }}</div>
+                <button type="button" class="toast__close" aria-label="Close">×</button>
+              </div>
             {% endfor %}
-          </ul>
+          </div>
         {% endif %}
       {% endwith %}
       {% block content %}{% endblock %}
     </main>
+    <script>
+      (function() {
+        var stack = document.getElementById('toast_stack');
+        if (!stack) return;
+        stack.addEventListener('click', function(e) {
+          var btn = e.target && e.target.closest ? e.target.closest('.toast__close') : null;
+          if (!btn) return;
+          var toast = btn.closest('.toast');
+          if (toast) toast.remove();
+        });
+        Array.from(stack.querySelectorAll('.toast')).forEach(function(t) {
+          setTimeout(function() {
+            try { t.remove(); } catch (e) {}
+          }, 5500);
+        });
+      })();
+    </script>
   </body>
 </html>
