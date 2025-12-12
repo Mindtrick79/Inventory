@@ -42,13 +42,27 @@ header {
   backdrop-filter: saturate(140%) blur(8px);
 }
 
+.header-branding {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
 header h1 {
   margin: 0 0 0.5rem 0;
 }
 
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 nav a {
   color: var(--color-nav-link);
-  margin-right: 1rem;
+  margin-right: 0;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -799,9 +813,29 @@ main table a:hover {
     padding: 1rem;
   }
 
+  header {
+    padding: 0.75rem;
+  }
+
+  header h1 {
+    font-size: 1.1rem;
+    margin-bottom: 0.35rem;
+  }
+
+  nav {
+    gap: 0.45rem;
+  }
+
   nav a {
-    display: inline-block;
-    margin: 0.25rem 0.75rem 0.25rem 0;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .nav-user {
+    width: 100%;
+    margin-right: 0;
+    margin-top: 0.25rem;
+    opacity: 0.95;
   }
 
   input[type="text"],
@@ -824,6 +858,18 @@ main table a:hover {
   th,
   td {
     font-size: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+
+  nav a {
+    white-space: nowrap;
   }
 }
 
