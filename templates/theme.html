@@ -1,0 +1,280 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Theme Settings</h2>
+<p>Customize colors and fonts for the app. Changes apply to all users.</p>
+
+<form method="post" id="theme-form">
+  <fieldset>
+    <legend>Presets</legend>
+    <div>
+      <label for="theme_preset">Theme Preset</label>
+      <select id="theme_preset" name="theme_preset">
+        <option value="custom" selected>Custom</option>
+        <option value="default">Default</option>
+        <option value="dark">Dark</option>
+        <option value="highcontrast">High Contrast</option>
+      </select>
+    </div>
+  </fieldset>
+  <fieldset>
+    <legend>Layout</legend>
+    <div>
+      <label for="theme_bg">Page Background</label>
+      <input type="color" id="theme_bg" name="theme_bg" value="{{ settings.theme_bg }}">
+    </div>
+    <div>
+      <label for="theme_card_bg">Card / Table Background</label>
+      <input type="color" id="theme_card_bg" name="theme_card_bg" value="{{ settings.theme_card_bg }}">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Header &amp; Navigation</legend>
+    <div>
+      <label for="theme_header_bg">Header Bar</label>
+      <input type="color" id="theme_header_bg" name="theme_header_bg" value="{{ settings.theme_header_bg }}">
+    </div>
+    <div>
+      <label for="theme_header_text">Header Text</label>
+      <input type="color" id="theme_header_text" name="theme_header_text" value="{{ settings.theme_header_text }}">
+    </div>
+    <div>
+      <label for="theme_nav_link">Nav Link</label>
+      <input type="color" id="theme_nav_link" name="theme_nav_link" value="{{ settings.theme_nav_link }}">
+    </div>
+    <div>
+      <label for="theme_nav_link_hover">Nav Link (Hover)</label>
+      <input type="color" id="theme_nav_link_hover" name="theme_nav_link_hover" value="{{ settings.theme_nav_link_hover }}">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Tables</legend>
+    <div>
+      <label for="theme_table_header_bg">Header Row</label>
+      <input type="color" id="theme_table_header_bg" name="theme_table_header_bg" value="{{ settings.theme_table_header_bg }}">
+    </div>
+    <div>
+      <label for="theme_table_row_alt">Alternate Row</label>
+      <input type="color" id="theme_table_row_alt" name="theme_table_row_alt" value="{{ settings.theme_table_row_alt }}">
+    </div>
+    <div>
+      <label for="theme_table_row_hover">Row Hover</label>
+      <input type="color" id="theme_table_row_hover" name="theme_table_row_hover" value="{{ settings.theme_table_row_hover }}">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Buttons</legend>
+    <div>
+      <label for="theme_button_bg">Button Background</label>
+      <input type="color" id="theme_button_bg" name="theme_button_bg" value="{{ settings.theme_button_bg }}">
+    </div>
+    <div>
+      <label for="theme_button_hover_bg">Button Hover</label>
+      <input type="color" id="theme_button_hover_bg" name="theme_button_hover_bg" value="{{ settings.theme_button_hover_bg }}">
+    </div>
+    <div>
+      <label for="theme_button_text">Button Text</label>
+      <input type="color" id="theme_button_text" name="theme_button_text" value="{{ settings.theme_button_text }}">
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Fonts</legend>
+    <div>
+      <label for="theme_font_family">Base Font</label>
+      <select id="theme_font_family" name="theme_font_family">
+        {% set current_font = settings.theme_font_family or 'Arial, sans-serif' %}
+        <option value="Arial, sans-serif" {% if current_font == 'Arial, sans-serif' %}selected{% endif %}>Arial</option>
+        <option value="'Segoe UI', sans-serif" {% if current_font == "'Segoe UI', sans-serif" %}selected{% endif %}>Segoe UI</option>
+        <option value="'Roboto', sans-serif" {% if current_font == "'Roboto', sans-serif" %}selected{% endif %}>Roboto</option>
+        <option value="'Georgia', serif" {% if current_font == "'Georgia', serif" %}selected{% endif %}>Georgia</option>
+      </select>
+    </div>
+  </fieldset>
+
+  <div class="form-actions">
+    <button type="submit">Save Theme</button>
+  </div>
+</form>
+ 
+<hr>
+
+<h3>Live Preview</h3>
+<div id="theme-preview" style="border: 1px solid #ccc; border-radius: 4px; overflow: hidden; max-width: 480px;">
+  <div id="preview-header" style="padding: 0.5rem 0.75rem; font-weight: bold;">Header / Nav Preview</div>
+  <div id="preview-body" style="padding: 0.75rem;">
+    <div style="margin-bottom: 0.5rem;">
+      <a href="#" id="preview-link" style="margin-right: 0.75rem; text-decoration: none;">Link</a>
+      <a href="#" id="preview-link-hover" style="text-decoration: underline;">Hover Link</a>
+    </div>
+    <button type="button" id="preview-button" style="margin-bottom: 0.75rem;">Button</button>
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+      <thead>
+        <tr id="preview-th-row">
+          <th style="padding: 0.25rem 0.4rem; border: 1px solid #ddd;">Header</th>
+          <th style="padding: 0.25rem 0.4rem; border: 1px solid #ddd;">Header</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr id="preview-row-alt">
+          <td style="padding: 0.25rem 0.4rem; border: 1px solid #ddd;">Row (alt)</td>
+          <td style="padding: 0.25rem 0.4rem; border: 1px solid #ddd;">Value</td>
+        </tr>
+        <tr id="preview-row-hover">
+          <td style="padding: 0.25rem 0.4rem; border: 1px solid #ddd;">Row (hover)</td>
+          <td style="padding: 0.25rem 0.4rem; border: 1px solid #ddd;">Value</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const presets = {
+      default: {
+        theme_bg: '#f5f5f5',
+        theme_card_bg: '#ffffff',
+        theme_header_bg: '#1f4e79',
+        theme_header_text: '#ffffff',
+        theme_nav_link: '#ffffff',
+        theme_nav_link_hover: '#ffffff',
+        theme_table_header_bg: '#e3edf5',
+        theme_table_row_alt: '#fafafa',
+        theme_table_row_hover: '#f1f7ff',
+        theme_button_bg: '#1f4e79',
+        theme_button_hover_bg: '#173958',
+        theme_button_text: '#ffffff'
+      },
+      dark: {
+        theme_bg: '#121212',
+        theme_card_bg: '#1e1e1e',
+        theme_header_bg: '#222831',
+        theme_header_text: '#eeeeee',
+        theme_nav_link: '#eeeeee',
+        theme_nav_link_hover: '#00adb5',
+        theme_table_header_bg: '#393e46',
+        theme_table_row_alt: '#222831',
+        theme_table_row_hover: '#393e46',
+        theme_button_bg: '#00adb5',
+        theme_button_hover_bg: '#00838a',
+        theme_button_text: '#ffffff'
+      },
+      highcontrast: {
+        theme_bg: '#000000',
+        theme_card_bg: '#ffffff',
+        theme_header_bg: '#000000',
+        theme_header_text: '#ffff00',
+        theme_nav_link: '#00ffff',
+        theme_nav_link_hover: '#ff00ff',
+        theme_table_header_bg: '#ffff00',
+        theme_table_row_alt: '#ffffff',
+        theme_table_row_hover: '#ffe680',
+        theme_button_bg: '#000000',
+        theme_button_hover_bg: '#333333',
+        theme_button_text: '#ffff00'
+      }
+    };
+
+    const fieldIds = [
+      'theme_bg',
+      'theme_card_bg',
+      'theme_header_bg',
+      'theme_header_text',
+      'theme_nav_link',
+      'theme_nav_link_hover',
+      'theme_table_header_bg',
+      'theme_table_row_alt',
+      'theme_table_row_hover',
+      'theme_button_bg',
+      'theme_button_hover_bg',
+      'theme_button_text'
+    ];
+
+    const $ = (id) => document.getElementById(id);
+
+    function applyPreset(name) {
+      const preset = presets[name];
+      if (!preset) return;
+      fieldIds.forEach((id) => {
+        if (preset[id] && $(id)) {
+          $(id).value = preset[id];
+        }
+      });
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const bg = $('theme_bg').value;
+      const cardBg = $('theme_card_bg').value;
+      const headerBg = $('theme_header_bg').value;
+      const headerText = $('theme_header_text').value;
+      const navLink = $('theme_nav_link').value;
+      const navLinkHover = $('theme_nav_link_hover').value;
+      const thBg = $('theme_table_header_bg').value;
+      const rowAlt = $('theme_table_row_alt').value;
+      const rowHover = $('theme_table_row_hover').value;
+      const btnBg = $('theme_button_bg').value;
+      const btnHover = $('theme_button_hover_bg').value;
+      const btnText = $('theme_button_text').value;
+
+      const preview = $('theme-preview');
+      const header = $('preview-header');
+      const body = $('preview-body');
+      const link = $('preview-link');
+      const linkHover = $('preview-link-hover');
+      const button = $('preview-button');
+      const thRow = $('preview-th-row');
+      const rowAltEl = $('preview-row-alt');
+      const rowHoverEl = $('preview-row-hover');
+
+      if (preview) preview.style.backgroundColor = bg;
+      if (body) body.style.backgroundColor = cardBg;
+      if (header) {
+        header.style.backgroundColor = headerBg;
+        header.style.color = headerText;
+      }
+      if (link) link.style.color = navLink;
+      if (linkHover) linkHover.style.color = navLinkHover;
+      if (button) {
+        button.style.backgroundColor = btnBg;
+        button.style.color = btnText;
+      }
+      if (thRow) thRow.style.backgroundColor = thBg;
+      if (rowAltEl) rowAltEl.style.backgroundColor = rowAlt;
+      if (rowHoverEl) rowHoverEl.style.backgroundColor = rowHover;
+
+      // Simple visual cue for hover color
+      rowHoverEl && (rowHoverEl.style.outline = '2px dashed ' + navLinkHover);
+    }
+
+    const presetSelect = $('theme_preset');
+    if (presetSelect) {
+      presetSelect.addEventListener('change', function () {
+        const v = this.value;
+        if (v === 'custom') return;
+        applyPreset(v);
+      });
+    }
+
+    fieldIds.forEach((id) => {
+      const el = $(id);
+      if (el) {
+        el.addEventListener('input', function () {
+          // Mark preset as custom once the user starts tweaking
+          if (presetSelect && presetSelect.value !== 'custom') {
+            presetSelect.value = 'custom';
+          }
+          updatePreview();
+        });
+      }
+    });
+
+    // Initialize preview on load
+    updatePreview();
+  })();
+</script>
+
+{% endblock %}

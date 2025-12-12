@@ -723,6 +723,61 @@ def create_app():
             save_settings(current)
             app.config["APP_SETTINGS"] = current
 
+            if action == "autodetect":
+                from_email = (current.get("from_email") or "").strip()
+                if not from_email or "@" not in from_email:
+                    flash("Enter a valid From Email before auto-detecting.", "warning")
+                    return redirect(url_for("settings_view"))
+
+                domain = from_email.split("@", 1)[1].lower()
+
+                # Simple domain-based presets for major providers
+                if domain in {"gmail.com", "googlemail.com"}:
+                    current["smtp_provider"] = "gmail"
+                    current["smtp_host"] = "smtp.gmail.com"
+                    current["smtp_port"] = 587
+                    current["smtp_use_tls"] = True
+                    current["smtp_user"] = from_email
+                elif domain in {"outlook.com", "hotmail.com", "live.com", "office365.com"}:
+                    current["smtp_provider"] = "office365"
+                    current["smtp_host"] = "smtp.office365.com"
+                    current["smtp_port"] = 587
+                    current["smtp_use_tls"] = True
+                    current["smtp_user"] = from_email
+                # GoDaddy workspace email (secureserver.net) and related
+                elif domain in {"secureserver.net", "godaddymail.com"}:
+                    current["smtp_provider"] = "godaddy"
+                    current["smtp_host"] = "smtp.secureserver.net"
+                    current["smtp_port"] = 587
+                    current["smtp_use_tls"] = True
+                    current["smtp_user"] = from_email
+                elif domain in {"yahoo.com", "yahoo.co.uk"}:
+                    current["smtp_provider"] = "other"
+                    current["smtp_host"] = "smtp.mail.yahoo.com"
+                    current["smtp_port"] = 587
+                    current["smtp_use_tls"] = True
+                    current["smtp_user"] = from_email
+                elif domain in {"aol.com"}:
+                    current["smtp_provider"] = "other"
+                    current["smtp_host"] = "smtp.aol.com"
+                    current["smtp_port"] = 587
+                    current["smtp_use_tls"] = True
+                    current["smtp_user"] = from_email
+                else:
+                    # Generic guess for hosted domains (cPanel / Bluehost style)
+                    # Treat as cPanel-style hosting (Bluehost/HostGator/GoDaddy custom domains, etc.)
+                    current["smtp_provider"] = current.get("smtp_provider", "bluehost")
+                    current["smtp_host"] = current.get("smtp_host") or f"mail.{domain}"
+                    current["smtp_port"] = current.get("smtp_port") or SMTP_PORT
+                    current["smtp_use_tls"] = True
+                    if not current.get("smtp_user"):
+                        current["smtp_user"] = from_email
+
+                save_settings(current)
+                app.config["APP_SETTINGS"] = current
+                flash("SMTP settings guessed from email domain. Please verify and send a test email.", "info")
+                return redirect(url_for("settings_view"))
+
             if action == "test":
                 test_recipient = current.get("from_email") or current.get("default_email_cc", "")
                 recipients = [e.strip() for e in str(test_recipient).split(",") if e.strip()]
@@ -750,6 +805,35 @@ def create_app():
                 suggested_host = ""
 
         return render_template("settings.html", settings=settings, suggested_smtp_host=suggested_host)
+
+    @app.route("/theme", methods=["GET", "POST"])
+    @login_required("VIEW")
+    def theme_view():
+        if request.method == "POST":
+            current = app.config["APP_SETTINGS"].copy()
+            form = request.form
+
+            current["theme_bg"] = form.get("theme_bg", current.get("theme_bg", "#f5f5f5"))
+            current["theme_header_bg"] = form.get("theme_header_bg", current.get("theme_header_bg", "#1f4e79"))
+            current["theme_header_text"] = form.get("theme_header_text", current.get("theme_header_text", "#ffffff"))
+            current["theme_nav_link"] = form.get("theme_nav_link", current.get("theme_nav_link", "#ffffff"))
+            current["theme_nav_link_hover"] = form.get("theme_nav_link_hover", current.get("theme_nav_link_hover", "#ffffff"))
+            current["theme_table_header_bg"] = form.get("theme_table_header_bg", current.get("theme_table_header_bg", "#e3edf5"))
+            current["theme_table_row_alt"] = form.get("theme_table_row_alt", current.get("theme_table_row_alt", "#fafafa"))
+            current["theme_table_row_hover"] = form.get("theme_table_row_hover", current.get("theme_table_row_hover", "#f1f7ff"))
+            current["theme_card_bg"] = form.get("theme_card_bg", current.get("theme_card_bg", "#ffffff"))
+            current["theme_button_bg"] = form.get("theme_button_bg", current.get("theme_button_bg", "#1f4e79"))
+            current["theme_button_hover_bg"] = form.get("theme_button_hover_bg", current.get("theme_button_hover_bg", "#173958"))
+            current["theme_button_text"] = form.get("theme_button_text", current.get("theme_button_text", "#ffffff"))
+            current["theme_font_family"] = form.get("theme_font_family", current.get("theme_font_family", "Arial, sans-serif"))
+
+            save_settings(current)
+            app.config["APP_SETTINGS"] = current
+            flash("Theme updated.", "success")
+            return redirect(url_for("theme_view"))
+
+        settings = app.config["APP_SETTINGS"]
+        return render_template("theme.html", settings=settings)
 
     @app.route("/units", methods=["GET", "POST"])
     @login_required("ADMIN")

@@ -5,6 +5,25 @@
     <title>Roberts Inventory Manager</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% if settings is defined %}
+    <style>
+      :root {
+        --color-bg: {{ settings.theme_bg or '#f5f5f5' }};
+        --color-header-bg: {{ settings.theme_header_bg or '#1f4e79' }};
+        --color-header-text: {{ settings.theme_header_text or '#ffffff' }};
+        --color-nav-link: {{ settings.theme_nav_link or '#ffffff' }};
+        --color-nav-link-hover: {{ settings.theme_nav_link_hover or '#ffffff' }};
+        --color-table-header-bg: {{ settings.theme_table_header_bg or '#e3edf5' }};
+        --color-table-row-alt: {{ settings.theme_table_row_alt or '#fafafa' }};
+        --color-table-row-hover: {{ settings.theme_table_row_hover or '#f1f7ff' }};
+        --color-card-bg: {{ settings.theme_card_bg or '#ffffff' }};
+        --color-button-bg: {{ settings.theme_button_bg or '#1f4e79' }};
+        --color-button-hover-bg: {{ settings.theme_button_hover_bg or '#173958' }};
+        --color-button-text: {{ settings.theme_button_text or '#ffffff' }};
+        --font-base: {{ settings.theme_font_family or '"Arial, sans-serif"' }};
+      }
+    </style>
+    {% endif %}
   </head>
   <body>
     <header>
@@ -20,6 +39,7 @@
         <a href="{{ url_for('index') }}">Dashboard</a>
         <a href="{{ url_for('products') }}">Products</a>
         <a href="{{ url_for('reorder_log') }}">Reorder Log</a>
+        <a href="{{ url_for('theme_view') }}">Theme</a>
 
         {# Request-level and above: can create reorders and pricing requests #}
         {% if role in ['REQUEST', 'APPROVER', 'ADMIN'] %}

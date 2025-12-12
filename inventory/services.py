@@ -29,6 +29,20 @@ def load_settings() -> Dict[str, Any]:
         "company_address": "",
         "company_phone": "",
         "company_logo_path": "",
+        # Theme settings (colors/fonts)
+        "theme_bg": "#f5f5f5",
+        "theme_header_bg": "#1f4e79",
+        "theme_header_text": "#ffffff",
+        "theme_nav_link": "#ffffff",
+        "theme_nav_link_hover": "#ffffff",
+        "theme_table_header_bg": "#e3edf5",
+        "theme_table_row_alt": "#fafafa",
+        "theme_table_row_hover": "#f1f7ff",
+        "theme_card_bg": "#ffffff",
+        "theme_button_bg": "#1f4e79",
+        "theme_button_hover_bg": "#173958",
+        "theme_button_text": "#ffffff",
+        "theme_font_family": "Arial, sans-serif",
         # Email transport configuration; if left blank, falls back to config.py
         "smtp_provider": "bluehost",  # for future presets
         "smtp_host": "",
