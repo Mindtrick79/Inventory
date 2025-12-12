@@ -330,9 +330,15 @@ def create_app():
 
             products_list = [p for p in products_list if _matches(p)]
 
-        return render_template("products.html", products=products_list, query=q)
+        return render_template(
+            "products.html",
+            products=products_list,
+            query=q,
+            settings=app.config["APP_SETTINGS"],
+        )
 
     @app.route("/products/new", methods=["GET", "POST"])
+    @login_required("ADMIN")
     def new_product():
         if request.method == "POST":
             form = request.form
@@ -380,7 +386,7 @@ def create_app():
         )
 
     @app.route("/products/<product_name>/edit", methods=["GET", "POST"])
-    @login_required("REQUEST")
+    @login_required("ADMIN")
     def edit_product(product_name: str):
         # Look up the existing product row
         existing = get_product_by_name(product_name)
@@ -447,6 +453,58 @@ def create_app():
             distributors=distributors,
             container_units=container_units,
             reorder_labels=reorder_labels,
+        )
+
+    @app.route("/products/<product_name>/request", methods=["GET", "POST"])
+    @login_required("REQUEST")
+    def request_product(product_name: str):
+        product = get_product_by_name(product_name)
+        if not product:
+            flash("Product not found.", "danger")
+            return redirect(url_for("products"))
+
+        if request.method == "POST":
+            form = request.form
+            user = session.get("username", "web-user")
+            ip = request.remote_addr or ""
+            vendor = str(product.get("Distributor") or "(No Vendor)")
+
+            amount_raw = (form.get("order_amount") or "").strip()
+            notes = (form.get("notes") or "").strip()
+
+            try:
+                amount = float(amount_raw)
+            except ValueError:
+                amount = 0.0
+
+            if amount <= 0:
+                flash("Enter a positive order amount.", "danger")
+                return redirect(url_for("request_product", product_name=product_name))
+
+            reorder_qty_label = str(product.get("Reorder Quantity") or "")
+            location = str(product.get("Location") or "")
+            suggested_amount = str(product.get("Reorder Amount") or "")
+            item_desc = (
+                f"{product.get('Product Name', product_name)} – Order: {amount} {reorder_qty_label} "
+                f"(Suggested: {suggested_amount} {reorder_qty_label}, Location: {location})"
+            )
+
+            log_reorder(
+                user=user,
+                ip=ip,
+                vendor=vendor,
+                items_description=item_desc,
+                status="PENDING",
+                notes=notes,
+            )
+
+            flash("Reorder request created and logged as PENDING.", "success")
+            return redirect(url_for("products"))
+
+        return render_template(
+            "request_reorder.html",
+            product=product,
+            settings=app.config["APP_SETTINGS"],
         )
 
     @app.route("/reorder", methods=["GET", "POST"])

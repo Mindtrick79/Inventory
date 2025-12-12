@@ -1,7 +1,10 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2>Products</h2>
+{% set role = session.get('role', 'VIEW') %}
+{% if role == 'ADMIN' %}
 <a href="{{ url_for('new_product') }}">Add New Product</a>
+{% endif %}
 <form method="get" class="search-form">
   <label for="q">Search</label>
   <input type="text" id="q" name="q" value="{{ query or '' }}" placeholder="Name, category, vendor, or location">
@@ -42,7 +45,12 @@
       <td>{{ p['Location'] }}</td>
       <td>{{ p['Cost Per Unit'] }}</td>
       <td>
-        <a href="{{ url_for('edit_product', product_name=p['Product Name']) }}">Edit</a>
+        {% if role == 'ADMIN' %}
+          <a href="{{ url_for('edit_product', product_name=p['Product Name']) }}">Edit</a>
+        {% endif %}
+        {% if role in ['REQUEST', 'APPROVER', 'ADMIN'] %}
+          <a href="{{ url_for('request_product', product_name=p['Product Name']) }}">Request</a>
+        {% endif %}
       </td>
     </tr>
     {% endfor %}

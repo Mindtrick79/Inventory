@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Request Reorder</h2>
+
+<p><strong>Product:</strong> {{ product['Product Name'] }}</p>
+<p><strong>On Hand:</strong> {{ product['Quantity on Hand'] }}</p>
+<p><strong>Suggested Amount:</strong> {{ product['Reorder Amount'] }} {{ product['Reorder Quantity'] }}</p>
+<p><strong>Location:</strong> {{ product['Location'] }}</p>
+<p><strong>Vendor:</strong> {{ product['Distributor'] }}</p>
+
+<form method="post">
+  <div>
+    <label for="order_amount">Order Amount</label>
+    <input type="number" step="any" min="0" id="order_amount" name="order_amount" value="{{ product['Reorder Amount'] }}" required>
+  </div>
+
+  <div>
+    <label for="notes">Notes (optional)</label>
+    <input type="text" id="notes" name="notes" placeholder="Truck #, urgency, etc.">
+  </div>
+
+  <div>
+    <button type="submit">Submit Request</button>
+    <a href="{{ url_for('products') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
