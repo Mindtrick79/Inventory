@@ -67,6 +67,26 @@ def create_app():
             "role": "ADMIN",
         }
 
+    def _save_product_image(file_storage, product_name: str) -> str:
+        if not file_storage or not getattr(file_storage, "filename", ""):
+            return ""
+
+        _, ext = os.path.splitext(file_storage.filename)
+        ext = ext.lower()
+        if ext not in {".png", ".jpg", ".jpeg", ".gif", ".webp"}:
+            return ""
+
+        safe_name = re.sub(r"[^a-zA-Z0-9_-]+", "_", product_name).strip("_") or "product"
+        rel_dir = os.path.join("uploads", "product_images")
+        abs_dir = os.path.join(BASE_DIR, "static", rel_dir)
+        os.makedirs(abs_dir, exist_ok=True)
+
+        filename = f"{safe_name}{ext}"
+        abs_path = os.path.join(abs_dir, filename)
+        file_storage.save(abs_path)
+
+        return os.path.join(rel_dir, filename).replace("\\", "/")
+
     def _load_users() -> list[dict]:
         """Load users from users.json, creating a default admin/admin if needed.
 
@@ -454,6 +474,11 @@ def create_app():
                 "Cost Per Unit": form.get("cost_per_unit", "").strip(),
             }
 
+            image_file = request.files.get("product_image")
+            image_path = _save_product_image(image_file, data.get("Product Name", ""))
+            if image_path:
+                data["Image Path"] = image_path
+
             add_product(data)
             flash("Product added successfully.", "success")
             return redirect(url_for("products"))
@@ -475,6 +500,7 @@ def create_app():
             distributors=distributors,
             container_units=container_units,
             reorder_labels=reorder_labels,
+            settings=app.config["APP_SETTINGS"],
         )
 
     @app.route("/products/<product_name>/edit", methods=["GET", "POST"])
@@ -521,6 +547,14 @@ def create_app():
                 "Cost Per Unit": form.get("cost_per_unit", existing.get("Cost Per Unit", "")).strip(),
             }
 
+            image_file = request.files.get("product_image")
+            image_path = _save_product_image(image_file, new_name)
+            if image_path:
+                update_data["Image Path"] = image_path
+            else:
+                if existing.get("Image Path"):
+                    update_data["Image Path"] = existing.get("Image Path")
+
             ok = update_product(product_name, update_data)
             if ok:
                 flash("Product updated.", "success")
@@ -545,6 +579,7 @@ def create_app():
             distributors=distributors,
             container_units=container_units,
             reorder_labels=reorder_labels,
+            settings=app.config["APP_SETTINGS"],
         )
 
     @app.route("/products/<product_name>/request", methods=["GET", "POST"])

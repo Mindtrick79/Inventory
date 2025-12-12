@@ -411,6 +411,24 @@ main table a:hover {
   color: #b3261e;
 }
 
+.product-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-sm);
+}
+
+.product-thumb-large {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-md);
+}
+
 @keyframes statusPulse {
   0%, 100% {
     box-shadow: var(--shadow-sm);

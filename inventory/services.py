@@ -367,10 +367,11 @@ def update_product(original_name: str, data: Dict[str, Any]) -> bool:
     if not mask.any():
         return False
 
-    # Only update known columns; ignore extras.
+    # Update columns; if a new column is introduced (e.g. Image Path), add it.
     for col, value in data.items():
-        if col in master_df.columns:
-            master_df.loc[mask, col] = value
+        if col not in master_df.columns:
+            master_df[col] = ""
+        master_df.loc[mask, col] = value
 
     save_inventory_workbook(master_df, tx_df, vendors_df, reorder_log_df)
     return True

@@ -18,6 +18,7 @@
 <table>
   <thead>
     <tr>
+      <th>Image</th>
       <th>Product Name</th>
       <th>Category</th>
       <th>Quantity on Hand</th>
@@ -34,6 +35,15 @@
   <tbody>
     {% for p in products %}
     <tr>
+      <td>
+        {% if p.get('Image Path') %}
+          <a href="{{ url_for('static', filename=p.get('Image Path')) }}" target="_blank" rel="noopener">
+            <img src="{{ url_for('static', filename=p.get('Image Path')) }}" alt="{{ p['Product Name'] }}" class="product-thumb">
+          </a>
+        {% else %}
+          
+        {% endif %}
+      </td>
       <td>{{ p['Product Name'] }}</td>
       <td>{{ p['Category'] }}</td>
       <td>{{ p['Quantity on Hand'] }}</td>
