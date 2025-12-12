@@ -28,11 +28,12 @@
           <a href="{{ url_for('approvals') }}">Approvals</a>
         {% endif %}
 
-        {# Admin-only: vendors and user management #}
+        {# Admin-only: vendors, users, units, and settings #}
         {% if role == 'ADMIN' %}
           <a href="{{ url_for('vendors') }}">Vendors</a>
           <a href="{{ url_for('manage_users') }}">Users</a>
           <a href="{{ url_for('manage_units') }}">Units &amp; Labels</a>
+          <a href="{{ url_for('settings_view') }}">Settings</a>
         {% endif %}
 
         {% if session.get('username') %}
