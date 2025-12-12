@@ -385,6 +385,7 @@ def create_app():
             "db_admin.html",
             settings=app.config["APP_SETTINGS"],
             db_path=DB_PATH,
+            backend=(os.environ.get("INVENTORY_BACKEND") or "excel").strip().lower(),
             counts=counts,
         )
 

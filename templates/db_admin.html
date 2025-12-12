@@ -18,6 +18,19 @@
   </form>
 </div>
 
+<div class="form-card">
+  <div class="form-card__title">Backend mode</div>
+  <div style="opacity:0.9; margin-bottom:0.5rem;">
+    <strong>Current:</strong> {{ backend or 'excel' }}
+  </div>
+  <div style="opacity:0.8;">
+    To run SQLite as the source of truth, set:
+    <div style="margin-top:0.4rem; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:0.9rem; background: rgba(255,255,255,0.75); border:1px solid rgba(0,0,0,0.12); border-radius:6px; padding:0.6rem;">
+      INVENTORY_BACKEND=sqlite
+    </div>
+  </div>
+</div>
+
 <h3>Current SQLite DB</h3>
 <p><strong>Path:</strong> {{ db_path }}</p>
 
