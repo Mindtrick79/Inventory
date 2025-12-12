@@ -493,3 +493,215 @@ def adjust_product_quantity(
         "new_quantity": new_qty,
         "location": tx_entry["Location"],
     }
+
+
+def get_product_by_name(db_path: str, product_name: str) -> Optional[Dict[str, Any]]:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT data_json FROM products WHERE product_name = ?",
+            (str(product_name),),
+        ).fetchone()
+    if not row:
+        return None
+    d = _row_json_to_dict(row["data_json"])
+    if "Cost Per Unit" not in d:
+        d["Cost Per Unit"] = ""
+    return d
+
+
+def upsert_product(db_path: str, original_name: Optional[str], data: Dict[str, Any]) -> bool:
+    """Insert or update a product.
+
+    If original_name is provided, we update that row (by product_name) and allow changing
+    the Product Name in data. If original_name is None, we insert a new row.
+    """
+
+    init_db(db_path)
+    name = str(data.get("Product Name", "") or "").strip()
+    if not name:
+        return False
+
+    distributor = str(data.get("Distributor", "") or "")
+    category = str(data.get("Category", "") or "")
+    location = str(data.get("Location", "") or "")
+    container_unit = str(data.get("Container Unit", "") or "")
+    quantity_on_hand = _safe_float(data.get("Quantity on Hand"))
+    reorder_threshold = _safe_float(data.get("Reorder Threshold"))
+    reorder_amount = _safe_float(data.get("Reorder Amount"))
+    cost_per_unit = _safe_float(data.get("Cost Per Unit"))
+    now = datetime.utcnow().isoformat()
+
+    with connect(db_path) as conn:
+        if original_name:
+            existing = conn.execute(
+                "SELECT id FROM products WHERE product_name = ?",
+                (str(original_name),),
+            ).fetchone()
+        else:
+            existing = None
+
+        if existing:
+            conn.execute(
+                """
+                UPDATE products
+                SET product_name = ?,
+                    distributor = ?,
+                    category = ?,
+                    location = ?,
+                    quantity_on_hand = ?,
+                    reorder_threshold = ?,
+                    reorder_amount = ?,
+                    cost_per_unit = ?,
+                    container_unit = ?,
+                    data_json = ?,
+                    updated_at = ?
+                WHERE id = ?
+                """,
+                (
+                    name,
+                    distributor,
+                    category,
+                    location,
+                    quantity_on_hand,
+                    reorder_threshold,
+                    reorder_amount,
+                    cost_per_unit,
+                    container_unit,
+                    _to_json(data),
+                    now,
+                    int(existing["id"]),
+                ),
+            )
+            return True
+
+        conn.execute(
+            """
+            INSERT INTO products(
+              product_name, distributor, category, location,
+              quantity_on_hand, reorder_threshold, reorder_amount,
+              cost_per_unit, container_unit,
+              data_json, updated_at
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                name,
+                distributor,
+                category,
+                location,
+                quantity_on_hand,
+                reorder_threshold,
+                reorder_amount,
+                cost_per_unit,
+                container_unit,
+                _to_json(data),
+                now,
+            ),
+        )
+        return True
+
+
+def get_all_vendors(db_path: str) -> List[Dict[str, Any]]:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT data_json FROM vendors ORDER BY vendor_name COLLATE NOCASE"
+        ).fetchall()
+    return [_row_json_to_dict(r["data_json"]) for r in rows]
+
+
+def get_vendor_by_name(db_path: str, vendor_name: str) -> Optional[Dict[str, Any]]:
+    init_db(db_path)
+    with connect(db_path) as conn:
+        row = conn.execute(
+            "SELECT data_json FROM vendors WHERE vendor_name = ?",
+            (str(vendor_name),),
+        ).fetchone()
+    if not row:
+        return None
+    return _row_json_to_dict(row["data_json"])
+
+
+def upsert_vendor(db_path: str, data: Dict[str, Any]) -> bool:
+    init_db(db_path)
+    name = str(data.get("Vendor Name", "") or "").strip()
+    if not name:
+        return False
+
+    email = str(data.get("Email", "") or "")
+    cc_emails = str(data.get("CC Emails", "") or "")
+    now = datetime.utcnow().isoformat()
+
+    with connect(db_path) as conn:
+        existing = conn.execute(
+            "SELECT id FROM vendors WHERE vendor_name = ?",
+            (name,),
+        ).fetchone()
+        if existing:
+            conn.execute(
+                """
+                UPDATE vendors
+                SET email = ?, cc_emails = ?, data_json = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                (email, cc_emails, _to_json(data), now, int(existing["id"])),
+            )
+            return True
+
+        conn.execute(
+            """
+            INSERT INTO vendors(vendor_name, email, cc_emails, data_json, updated_at)
+            VALUES (?,?,?,?,?)
+            """,
+            (name, email, cc_emails, _to_json(data), now),
+        )
+        return True
+
+
+def bulk_replace_product_field(db_path: str, column: str, old_value: str, new_value: str) -> int:
+    """Replace values across all products for a specific Excel-style column.
+
+    Used by Units & Labels (Container Unit, Reorder Quantity, Distributor).
+    Returns number of updated products.
+    """
+
+    if column not in {"Container Unit", "Reorder Quantity", "Distributor"}:
+        return 0
+    if not new_value:
+        return 0
+
+    init_db(db_path)
+    updated = 0
+    with connect(db_path) as conn:
+        rows = conn.execute(
+            "SELECT id, data_json FROM products"
+        ).fetchall()
+
+        for r in rows:
+            d = _row_json_to_dict(r["data_json"])
+            if str(d.get(column, "")) != str(old_value):
+                continue
+            d[column] = new_value
+
+            # Keep the indexed columns consistent where applicable
+            distributor = None
+            container_unit = None
+            if column == "Distributor":
+                distributor = str(new_value)
+            if column == "Container Unit":
+                container_unit = str(new_value)
+
+            conn.execute(
+                """
+                UPDATE products
+                SET distributor = COALESCE(?, distributor),
+                    container_unit = COALESCE(?, container_unit),
+                    data_json = ?,
+                    updated_at = ?
+                WHERE id = ?
+                """,
+                (distributor, container_unit, _to_json(d), datetime.utcnow().isoformat(), int(r["id"])),
+            )
+            updated += 1
+
+    return updated

@@ -4,8 +4,9 @@ import os
 import json
 import hashlib
 import io
+import calendar
 from functools import wraps
-from datetime import timedelta
+from datetime import date, timedelta
 import smtplib
 import re
 import pandas as pd
@@ -387,6 +388,11 @@ def create_app():
         # Optional date range filters for analytics (YYYY-MM-DD)
         start_date = request.args.get("start_date")
         end_date = request.args.get("end_date")
+        if not start_date and not end_date:
+            today = date.today()
+            start_date = date(today.year, today.month, 1).isoformat()
+            last_day = calendar.monthrange(today.year, today.month)[1]
+            end_date = date(today.year, today.month, last_day).isoformat()
         analytics = get_reorder_analytics(start_date, end_date)
 
         return render_template(
