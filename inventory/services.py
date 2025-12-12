@@ -42,6 +42,8 @@ def load_settings() -> Dict[str, Any]:
         "company_address": "",
         "company_phone": "",
         "company_logo_path": "",
+        "po_footer_pickup": "Please print this form for pickup. Attach vendor receipt to provide to the employee picking up the order.",
+        "po_footer_ship": "Please include a copy of this form with the shipment and packing slip.",
         # Theme settings (colors/fonts)
         "theme_bg": "#f5f5f5",
         "theme_text": "#111111",
@@ -563,6 +565,10 @@ def send_reorder_email(
             company_phone_local = str(settings_local.get("company_phone", "")).strip()
             logo_path = str(settings_local.get("company_logo_path", "")).strip()
 
+            pickup_footer = str(settings_local.get("po_footer_pickup", "")).strip()
+            ship_footer = str(settings_local.get("po_footer_ship", "")).strip()
+            footer_text = pickup_footer if delivery_method == "PICKUP" else ship_footer
+
             pdf = FPDF(orientation="P", unit="mm", format="Letter")
             pdf.set_auto_page_break(auto=True, margin=12)
             pdf.add_page()
@@ -630,6 +636,13 @@ def send_reorder_email(
                 pdf.cell(0, 6, "Notes", ln=1)
                 pdf.set_font("Helvetica", "", 10)
                 pdf.multi_cell(0, 5, notes)
+
+            if footer_text:
+                pdf.ln(4)
+                pdf.set_font("Helvetica", "B", 10)
+                pdf.cell(0, 6, "Instructions", ln=1)
+                pdf.set_font("Helvetica", "", 9)
+                pdf.multi_cell(0, 4.5, footer_text)
 
             return bytes(pdf.output(dest="S"))
 

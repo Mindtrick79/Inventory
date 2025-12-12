@@ -1108,6 +1108,8 @@ def create_app():
             current["email_subject_prefix"] = request.form.get("email_subject_prefix", current.get("email_subject_prefix", ""))
             current["default_email_cc"] = request.form.get("default_email_cc", current.get("default_email_cc", ""))
             current["email_footer"] = request.form.get("email_footer", current.get("email_footer", ""))
+            current["po_footer_pickup"] = request.form.get("po_footer_pickup", current.get("po_footer_pickup", ""))
+            current["po_footer_ship"] = request.form.get("po_footer_ship", current.get("po_footer_ship", ""))
             current["stock_use_notify_emails"] = request.form.get("stock_use_notify_emails", current.get("stock_use_notify_emails", ""))
             current["checkout_email_to"] = request.form.get("checkout_email_to", current.get("checkout_email_to", "office@robertspest.com")).strip()
             current["checkout_email_cc"] = request.form.get("checkout_email_cc", current.get("checkout_email_cc", ""))

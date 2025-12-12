@@ -35,6 +35,16 @@
   </div>
 
   <div>
+    <label for="po_footer_pickup">Purchase Order Footer (Pickup)</label>
+    <textarea id="po_footer_pickup" name="po_footer_pickup" rows="3">{{ settings.po_footer_pickup }}</textarea>
+  </div>
+
+  <div>
+    <label for="po_footer_ship">Purchase Order Footer (Ship)</label>
+    <textarea id="po_footer_ship" name="po_footer_ship" rows="3">{{ settings.po_footer_ship }}</textarea>
+  </div>
+
+  <div>
     <label for="stock_use_notify_emails">Stock Use Notification Emails (comma-separated)</label>
     <input type="text" id="stock_use_notify_emails" name="stock_use_notify_emails" value="{{ settings.stock_use_notify_emails }}" placeholder="inventory@example.com, manager@example.com">
   </div>
