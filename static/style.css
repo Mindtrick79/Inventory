@@ -435,6 +435,49 @@ a.button-link {
   transition: background-color 140ms ease, transform 120ms ease, box-shadow 160ms ease, filter 160ms ease;
 }
 
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: calc(0.55rem * var(--spacing-scale, 1)) calc(0.95rem * var(--spacing-scale, 1));
+  border: var(--border-width, 1px) solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius, 6px);
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 750;
+  letter-spacing: 0.01em;
+  box-shadow: var(--shadow-sm);
+  transition: background-color 140ms ease, transform 120ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+.btn--primary {
+  background-color: var(--color-button-bg);
+  color: var(--color-button-text);
+}
+
+.btn--secondary {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-text);
+}
+
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text);
+  box-shadow: none;
+}
+
+.btn--danger {
+  background: rgba(220, 38, 38, 0.92);
+  color: #fff;
+  border-color: rgba(220, 38, 38, 0.35);
+}
+
+.btn--sm {
+  padding: calc(0.42rem * var(--spacing-scale, 1)) calc(0.7rem * var(--spacing-scale, 1));
+  font-size: 0.9rem;
+}
+
 button:hover,
 .button-link:hover,
 a.button-link:hover {
@@ -442,6 +485,47 @@ a.button-link:hover {
   text-decoration: none;
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(0.98);
+}
+
+.btn--primary:hover {
+  background-color: var(--color-button-hover-bg);
+}
+
+.btn--secondary:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+.btn--ghost:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.btn--danger:hover {
+  background: rgba(220, 38, 38, 1);
+}
+
+.empty-state {
+  background: var(--color-card-bg);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius, 6px);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
+  margin-top: 0.75rem;
+}
+
+.empty-state__title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.empty-state__hint {
+  margin-top: 0.35rem;
+  opacity: 0.85;
 }
 
 button:active,

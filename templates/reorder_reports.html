@@ -7,8 +7,8 @@
     <div class="page-toolbar__subtitle">Filter by vendor, PO #, date range, and export the exact view.</div>
   </div>
   <div class="page-toolbar__actions">
-    <a class="button-link" href="{{ url_for('reorder_reports_export_xlsx', **filters) }}">Export Excel</a>
-    <a class="button-link" href="{{ url_for('reorder_reports_export_pdf', **filters) }}">Export PDF</a>
+    <a class="btn btn--secondary" href="{{ url_for('reorder_reports_export_xlsx', **filters) }}">Export Excel</a>
+    <a class="btn btn--secondary" href="{{ url_for('reorder_reports_export_pdf', **filters) }}">Export PDF</a>
   </div>
 </div>
 
@@ -56,8 +56,8 @@
       </select>
     </div>
     <div class="search-form__actions">
-      <button type="submit">Apply</button>
-      <a class="button-link" href="{{ url_for('reorder_reports') }}">Reset</a>
+      <button type="submit" class="btn btn--primary btn--sm">Apply</button>
+      <a class="btn btn--secondary btn--sm" href="{{ url_for('reorder_reports') }}">Reset</a>
     </div>
   </div>
 </form>
@@ -98,7 +98,10 @@
 <section>
   <h3>Results</h3>
   {% if not rows %}
-    <p>No rows match the current filters.</p>
+    <div class="empty-state">
+      <div class="empty-state__title">No results</div>
+      <div class="empty-state__hint">Try broadening the date range, clearing filters, or searching by vendor/PO #.</div>
+    </div>
   {% else %}
     <div class="table-wrap">
     <table>

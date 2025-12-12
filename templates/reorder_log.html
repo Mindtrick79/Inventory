@@ -7,12 +7,15 @@
     <div class="page-toolbar__subtitle">All reorder requests and approval history.</div>
   </div>
   <div class="page-toolbar__actions">
-    <a href="{{ url_for('reorder_log_export_xlsx') }}" class="button-link">Download Excel</a>
-    <a href="{{ url_for('reorder_log_export_pdf') }}" class="button-link">Download PDF</a>
+    <a href="{{ url_for('reorder_log_export_xlsx') }}" class="btn btn--secondary">Download Excel</a>
+    <a href="{{ url_for('reorder_log_export_pdf') }}" class="btn btn--secondary">Download PDF</a>
   </div>
 </div>
 {% if not log_rows %}
-  <p>No reorder history yet.</p>
+  <div class="empty-state">
+    <div class="empty-state__title">No reorder history yet</div>
+    <div class="empty-state__hint">Once requests are submitted and approved, you’ll see them here.</div>
+  </div>
 {% else %}
   <div class="table-wrap">
   <table>

@@ -1,10 +1,18 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Approvals</h2>
-<p>Pending reorder approvals.</p>
+
+<div class="page-toolbar">
+  <div class="page-toolbar__title">
+    <h2>Approvals</h2>
+    <div class="page-toolbar__subtitle">Approve or reject reorder requests and send vendor POs.</div>
+  </div>
+</div>
 
 {% if not pending %}
-  <p>No pending reorder requests.</p>
+  <div class="empty-state">
+    <div class="empty-state__title">No pending reorder requests</div>
+    <div class="empty-state__hint">When a request is submitted, it will appear here for approval.</div>
+  </div>
 {% else %}
   <form method="post">
     <div>
@@ -42,6 +50,7 @@
       <label for="internal_notes">Internal notes (only stored in log, not emailed)</label>
       <textarea id="internal_notes" name="internal_notes" rows="3"></textarea>
     </div>
+    <div class="table-wrap">
     <table>
       <thead>
         <tr>
@@ -64,13 +73,14 @@
           <td>{{ row['Items'] }}</td>
           <td>{{ row['Status'] }}</td>
           <td>
-            <button type="submit" name="action" value="APPROVE" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" data-set-timestamp="{{ row['Timestamp'] }}" data-set-vendor="{{ row['Vendor'] }}">Approve</button>
-            <button type="submit" name="action" value="REJECT" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" data-set-timestamp="{{ row['Timestamp'] }}" data-set-vendor="{{ row['Vendor'] }}">Reject</button>
+            <button class="btn btn--primary btn--sm" type="submit" name="action" value="APPROVE" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" data-set-timestamp="{{ row['Timestamp'] }}" data-set-vendor="{{ row['Vendor'] }}">Approve</button>
+            <button class="btn btn--danger btn--sm" type="submit" name="action" value="REJECT" formaction="{{ url_for('approvals') }}?row={{ loop.index0 }}" formmethod="post" data-set-timestamp="{{ row['Timestamp'] }}" data-set-vendor="{{ row['Vendor'] }}">Reject</button>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
+    </div>
     <input type="hidden" name="timestamp" value="">
     <input type="hidden" name="vendor" value="">
   </form>
