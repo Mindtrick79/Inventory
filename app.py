@@ -1050,6 +1050,7 @@ def create_app():
             form = request.form
 
             current["theme_bg"] = form.get("theme_bg", current.get("theme_bg", "#f5f5f5"))
+            current["theme_text"] = form.get("theme_text", current.get("theme_text", "#111111"))
             current["theme_header_bg"] = form.get("theme_header_bg", current.get("theme_header_bg", "#1f4e79"))
             current["theme_header_text"] = form.get("theme_header_text", current.get("theme_header_text", "#ffffff"))
             current["theme_nav_link"] = form.get("theme_nav_link", current.get("theme_nav_link", "#ffffff"))

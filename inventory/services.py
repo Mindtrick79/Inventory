@@ -35,6 +35,7 @@ def load_settings() -> Dict[str, Any]:
         "company_logo_path": "",
         # Theme settings (colors/fonts)
         "theme_bg": "#f5f5f5",
+        "theme_text": "#111111",
         "theme_header_bg": "#1f4e79",
         "theme_header_text": "#ffffff",
         "theme_nav_link": "#ffffff",

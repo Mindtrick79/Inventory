@@ -23,6 +23,10 @@
       <input type="color" id="theme_bg" name="theme_bg" value="{{ settings.theme_bg }}">
     </div>
     <div>
+      <label for="theme_text">Body Text</label>
+      <input type="color" id="theme_text" name="theme_text" value="{{ settings.theme_text or '#111111' }}">
+    </div>
+    <div>
       <label for="theme_card_bg">Card / Table Background</label>
       <input type="color" id="theme_card_bg" name="theme_card_bg" value="{{ settings.theme_card_bg }}">
     </div>
@@ -90,6 +94,13 @@
         <option value="'Segoe UI', sans-serif" {% if current_font == "'Segoe UI', sans-serif" %}selected{% endif %}>Segoe UI</option>
         <option value="'Roboto', sans-serif" {% if current_font == "'Roboto', sans-serif" %}selected{% endif %}>Roboto</option>
         <option value="'Georgia', serif" {% if current_font == "'Georgia', serif" %}selected{% endif %}>Georgia</option>
+        <option value="'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif" {% if current_font == "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif" %}selected{% endif %}>Inter</option>
+        <option value="'Tahoma', sans-serif" {% if current_font == "'Tahoma', sans-serif" %}selected{% endif %}>Tahoma</option>
+        <option value="'Trebuchet MS', sans-serif" {% if current_font == "'Trebuchet MS', sans-serif" %}selected{% endif %}>Trebuchet MS</option>
+        <option value="'Verdana', sans-serif" {% if current_font == "'Verdana', sans-serif" %}selected{% endif %}>Verdana</option>
+        <option value="'Times New Roman', serif" {% if current_font == "'Times New Roman', serif" %}selected{% endif %}>Times New Roman</option>
+        <option value="'Courier New', monospace" {% if current_font == "'Courier New', monospace" %}selected{% endif %}>Courier New</option>
+        <option value="'Consolas', monospace" {% if current_font == "'Consolas', monospace" %}selected{% endif %}>Consolas</option>
       </select>
     </div>
   </fieldset>
@@ -136,6 +147,7 @@
     const presets = {
       default: {
         theme_bg: '#f5f5f5',
+        theme_text: '#111111',
         theme_card_bg: '#ffffff',
         theme_header_bg: '#1f4e79',
         theme_header_text: '#ffffff',
@@ -150,6 +162,7 @@
       },
       dark: {
         theme_bg: '#121212',
+        theme_text: '#eeeeee',
         theme_card_bg: '#1e1e1e',
         theme_header_bg: '#222831',
         theme_header_text: '#eeeeee',
@@ -164,6 +177,7 @@
       },
       highcontrast: {
         theme_bg: '#000000',
+        theme_text: '#000000',
         theme_card_bg: '#ffffff',
         theme_header_bg: '#000000',
         theme_header_text: '#ffff00',
@@ -175,11 +189,57 @@
         theme_button_bg: '#000000',
         theme_button_hover_bg: '#333333',
         theme_button_text: '#ffff00'
+      },
+      forest: {
+        theme_bg: '#0b1d14',
+        theme_text: '#e7f7ef',
+        theme_card_bg: '#12261b',
+        theme_header_bg: '#0f2d1e',
+        theme_header_text: '#e7f7ef',
+        theme_nav_link: '#a8e6cf',
+        theme_nav_link_hover: '#dcedc1',
+        theme_table_header_bg: '#1c3b2a',
+        theme_table_row_alt: '#142c20',
+        theme_table_row_hover: '#1c3b2a',
+        theme_button_bg: '#2d6a4f',
+        theme_button_hover_bg: '#1b4332',
+        theme_button_text: '#ffffff'
+      },
+      sunset: {
+        theme_bg: '#fff3e6',
+        theme_text: '#2b2b2b',
+        theme_card_bg: '#ffffff',
+        theme_header_bg: '#ff6b6b',
+        theme_header_text: '#ffffff',
+        theme_nav_link: '#ffffff',
+        theme_nav_link_hover: '#ffe66d',
+        theme_table_header_bg: '#ffd6a5',
+        theme_table_row_alt: '#ffffff',
+        theme_table_row_hover: '#ffe5d9',
+        theme_button_bg: '#4d96ff',
+        theme_button_hover_bg: '#2f6fd6',
+        theme_button_text: '#ffffff'
+      },
+      slate: {
+        theme_bg: '#f1f5f9',
+        theme_text: '#0f172a',
+        theme_card_bg: '#ffffff',
+        theme_header_bg: '#0f172a',
+        theme_header_text: '#ffffff',
+        theme_nav_link: '#ffffff',
+        theme_nav_link_hover: '#38bdf8',
+        theme_table_header_bg: '#e2e8f0',
+        theme_table_row_alt: '#f8fafc',
+        theme_table_row_hover: '#e0f2fe',
+        theme_button_bg: '#2563eb',
+        theme_button_hover_bg: '#1d4ed8',
+        theme_button_text: '#ffffff'
       }
     };
 
     const fieldIds = [
       'theme_bg',
+      'theme_text',
       'theme_card_bg',
       'theme_header_bg',
       'theme_header_text',
@@ -208,6 +268,7 @@
 
     function updatePreview() {
       const bg = $('theme_bg').value;
+      const text = $('theme_text').value;
       const cardBg = $('theme_card_bg').value;
       const headerBg = $('theme_header_bg').value;
       const headerText = $('theme_header_text').value;
@@ -231,7 +292,11 @@
       const rowHoverEl = $('preview-row-hover');
 
       if (preview) preview.style.backgroundColor = bg;
-      if (body) body.style.backgroundColor = cardBg;
+      if (preview) preview.style.color = text;
+      if (body) {
+        body.style.backgroundColor = cardBg;
+        body.style.color = text;
+      }
       if (header) {
         header.style.backgroundColor = headerBg;
         header.style.color = headerText;
@@ -242,6 +307,9 @@
         button.style.backgroundColor = btnBg;
         button.style.color = btnText;
       }
+      if (thRow) thRow.style.color = text;
+      if (rowAltEl) rowAltEl.style.color = text;
+      if (rowHoverEl) rowHoverEl.style.color = text;
       if (thRow) thRow.style.backgroundColor = thBg;
       if (rowAltEl) rowAltEl.style.backgroundColor = rowAlt;
       if (rowHoverEl) rowHoverEl.style.backgroundColor = rowHover;
@@ -256,6 +324,17 @@
         const v = this.value;
         if (v === 'custom') return;
         applyPreset(v);
+      });
+    }
+
+    const fontSelect = $('theme_font_family');
+    if (fontSelect) {
+      fontSelect.addEventListener('change', function () {
+        if (presetSelect && presetSelect.value !== 'custom') {
+          presetSelect.value = 'custom';
+        }
+        const preview = $('theme-preview');
+        if (preview) preview.style.fontFamily = this.value;
       });
     }
 
@@ -274,6 +353,11 @@
 
     // Initialize preview on load
     updatePreview();
+    const previewInit = $('theme-preview');
+    const fontInit = $('theme_font_family');
+    if (previewInit && fontInit) {
+      previewInit.style.fontFamily = fontInit.value;
+    }
   })();
 </script>
 
