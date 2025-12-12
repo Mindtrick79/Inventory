@@ -39,6 +39,16 @@
     <input type="text" id="stock_use_notify_emails" name="stock_use_notify_emails" value="{{ settings.stock_use_notify_emails }}" placeholder="inventory@example.com, manager@example.com">
   </div>
 
+  <div>
+    <label for="checkout_email_to">Checkout Email To</label>
+    <input type="email" id="checkout_email_to" name="checkout_email_to" value="{{ settings.checkout_email_to }}" placeholder="office@robertspest.com">
+  </div>
+
+  <div>
+    <label for="checkout_email_cc">Checkout Email CC (comma-separated)</label>
+    <input type="text" id="checkout_email_cc" name="checkout_email_cc" value="{{ settings.checkout_email_cc }}" placeholder="manager@robertspest.com, owner@robertspest.com">
+  </div>
+
   <hr>
 
   <h3>Branding</h3>

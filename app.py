@@ -29,6 +29,7 @@ from inventory.services import (
     rename_product_value,
     adjust_product_quantity,
     send_basic_email,
+    send_html_email,
 )
 
 
@@ -679,6 +680,7 @@ def create_app():
 
             display_name = session.get("display_name", "").strip()
             phone = session.get("phone", "").strip()
+            email = session.get("email", "").strip()
 
             try:
                 amount = float(amount_raw)
@@ -711,33 +713,102 @@ def create_app():
                 if not result:
                     flash("Unable to record stock use for that product.", "danger")
                 else:
-                    # Email notification
+                    # Email notification (HTML table with cost)
                     settings = app.config["APP_SETTINGS"]
-                    notify_raw = settings.get("stock_use_notify_emails", "")
-                    notify_list = [e.strip() for e in str(notify_raw).split(",") if e.strip()]
-                    if notify_list:
-                        subject = f"Stock Use - {result['product_name']}"
-                        body_lines = [
-                            f"User: {user}",
-                            f"Name: {display_name or '(not set)'}",
-                            f"Phone: {phone or '(not set)'}",
-                            f"Truck: {truck or '(not set)'}",
-                            f"Job: {job or '(not set)'}",
-                            f"Product: {result['product_name']}",
-                            f"Location: {result['location']}",
-                            f"Amount Used: {amount}",
-                            f"Old Quantity: {result['old_quantity']}",
-                            f"New Quantity: {result['new_quantity']}",
-                            f"Notes: {checkout_notes or '(none)'}",
-                        ]
-                        body = "\n".join(body_lines)
+                    to_email = (settings.get("checkout_email_to") or "").strip()
+                    cc_raw = str(settings.get("checkout_email_cc") or "")
+                    cc_list = [e.strip() for e in cc_raw.split(",") if e.strip()]
 
-                        if send_basic_email(subject, body, notify_list):
-                            flash("Stock use recorded and notification sent.", "success")
+                    product = get_product_by_name(result["product_name"]) or {}
+                    unit = str(product.get("Container Unit") or "")
+                    cpu_raw = str(product.get("Cost Per Unit") or "").strip()
+                    try:
+                        unit_cost = float(cpu_raw)
+                    except ValueError:
+                        unit_cost = 0.0
+
+                    line_total = float(amount) * float(unit_cost)
+                    total_cost = line_total
+
+                    subject = f"Checkout - {display_name or user} - {result['product_name']}"
+
+                    text_lines = [
+                        f"Technician: {display_name or '(not set)'} ({user})",
+                        f"Phone: {phone or '(not set)'}",
+                        f"Email: {email or '(not set)'}",
+                        f"Truck: {truck or '(not set)'}",
+                        f"Job: {job or '(not set)'}",
+                        f"Product: {result['product_name']}",
+                        f"Location: {result['location']}",
+                        f"Quantity: {amount} {unit}",
+                        f"Unit Cost: ${unit_cost:,.2f}",
+                        f"Line Total: ${line_total:,.2f}",
+                        f"Total: ${total_cost:,.2f}",
+                        f"Notes: {checkout_notes or '(none)'}",
+                    ]
+                    text_body = "\n".join(text_lines)
+
+                    def _esc(s: str) -> str:
+                        return (
+                            str(s)
+                            .replace("&", "&amp;")
+                            .replace("<", "&lt;")
+                            .replace(">", "&gt;")
+                            .replace('"', "&quot;")
+                            .replace("'", "&#39;")
+                        )
+
+                    html_body = f"""
+<html>
+  <body>
+    <h2>Technician Checkout</h2>
+    <p><strong>Technician:</strong> {_esc(display_name or '(not set)')} ({_esc(user)})</p>
+    <p><strong>Phone:</strong> {_esc(phone or '(not set)')}</p>
+    <p><strong>Email:</strong> {_esc(email or '(not set)')}</p>
+    <p><strong>Truck:</strong> {_esc(truck or '(not set)')}</p>
+    <p><strong>Job:</strong> {_esc(job or '(not set)')}</p>
+    <p><strong>Location:</strong> {_esc(result['location'])}</p>
+
+    <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%; max-width:900px;">
+      <thead>
+        <tr>
+          <th align="left">Product</th>
+          <th align="right">Qty</th>
+          <th align="left">Unit</th>
+          <th align="right">Unit Cost</th>
+          <th align="right">Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{_esc(result['product_name'])}</td>
+          <td align="right">{amount:g}</td>
+          <td>{_esc(unit)}</td>
+          <td align="right">${unit_cost:,.2f}</td>
+          <td align="right">${line_total:,.2f}</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" align="right"><strong>Total</strong></td>
+          <td align="right"><strong>${total_cost:,.2f}</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <p><strong>Notes:</strong> {_esc(checkout_notes or '(none)')}</p>
+  </body>
+</html>
+"""
+
+                    if to_email:
+                        ok = send_html_email(subject, text_body, html_body, [to_email], cc_addresses=cc_list)
+                        if ok:
+                            flash("Stock use recorded and checkout email sent.", "success")
                         else:
-                            flash("Stock use recorded, but email notification failed.", "warning")
+                            flash("Stock use recorded, but checkout email failed.", "warning")
                     else:
-                        flash("Stock use recorded.", "success")
+                        flash("Stock use recorded (no checkout email configured).", "warning")
 
             return redirect(url_for("stock_use"))
 
@@ -801,6 +872,8 @@ def create_app():
             current["default_email_cc"] = request.form.get("default_email_cc", current.get("default_email_cc", ""))
             current["email_footer"] = request.form.get("email_footer", current.get("email_footer", ""))
             current["stock_use_notify_emails"] = request.form.get("stock_use_notify_emails", current.get("stock_use_notify_emails", ""))
+            current["checkout_email_to"] = request.form.get("checkout_email_to", current.get("checkout_email_to", "office@robertspest.com")).strip()
+            current["checkout_email_cc"] = request.form.get("checkout_email_cc", current.get("checkout_email_cc", ""))
 
             current["smtp_provider"] = request.form.get("smtp_provider", current.get("smtp_provider", "bluehost"))
             current["from_email"] = request.form.get("from_email", current.get("from_email", "")).strip()

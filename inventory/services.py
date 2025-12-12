@@ -26,6 +26,8 @@ def load_settings() -> Dict[str, Any]:
         "default_email_cc": "",
         "email_footer": "",
         "stock_use_notify_emails": "",
+        "checkout_email_to": "office@robertspest.com",
+        "checkout_email_cc": "",
         "company_address": "",
         "company_phone": "",
         "company_logo_path": "",
@@ -121,6 +123,36 @@ def send_basic_email(subject: str, body: str, to_addresses: List[str]) -> bool:
             if smtp_cfg["user"] and smtp_cfg["password"] and smtp_cfg["password"] != "CHANGE_ME":
                 server.login(smtp_cfg["user"], smtp_cfg["password"])
             server.send_message(msg, from_addr=smtp_cfg["from_email"], to_addrs=to_addresses)
+        return True
+    except Exception:
+        return False
+
+
+def send_html_email(subject: str, text_body: str, html_body: str, to_addresses: List[str], cc_addresses: Optional[List[str]] = None) -> bool:
+    settings = load_settings()
+    smtp_cfg = _resolve_smtp_config(settings)
+
+    cc_addresses = cc_addresses or []
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = smtp_cfg["from_email"]
+    msg["To"] = ", ".join(to_addresses)
+    if cc_addresses:
+        msg["Cc"] = ", ".join(cc_addresses)
+
+    msg.set_content(text_body)
+    msg.add_alternative(html_body, subtype="html")
+
+    recipients = list(to_addresses) + list(cc_addresses)
+
+    try:
+        with smtplib.SMTP(smtp_cfg["host"], smtp_cfg["port"]) as server:
+            if smtp_cfg["use_tls"]:
+                server.starttls()
+            if smtp_cfg["user"] and smtp_cfg["password"] and smtp_cfg["password"] != "CHANGE_ME":
+                server.login(smtp_cfg["user"], smtp_cfg["password"])
+            server.send_message(msg, from_addr=smtp_cfg["from_email"], to_addrs=recipients)
         return True
     except Exception:
         return False
