@@ -26,6 +26,7 @@ header {
   background-color: var(--color-header-bg);
   color: var(--color-header-text);
   padding: 1rem;
+  min-height: var(--header-height, auto);
 }
 
 header h1 {
@@ -58,7 +59,7 @@ nav a:hover {
 }
 
 main {
-  padding: 1.5rem;
+  padding: calc(1.5rem * var(--spacing-scale, 1));
 }
 
 table {
@@ -67,12 +68,14 @@ table {
   margin-top: 1rem;
   background-color: var(--color-card-bg);
   color: var(--color-text);
+  border-radius: var(--radius, 6px);
+  overflow: hidden;
 }
 
 th,
 td {
-  border: 1px solid #ddd;
-  padding: 0.5rem 0.75rem;
+  border: var(--border-width, 1px) solid #ddd;
+  padding: calc(0.5rem * var(--spacing-scale, 1)) calc(0.75rem * var(--spacing-scale, 1));
   font-size: 0.9rem;
 }
 
@@ -103,15 +106,15 @@ form div {
 
 input[type="text"],
 input[type="number"] {
-  padding: 0.3rem 0.4rem;
+  padding: calc(0.3rem * var(--spacing-scale, 1)) calc(0.4rem * var(--spacing-scale, 1));
   border: 1px solid #ccc;
-  border-radius: 3px;
+  border-radius: var(--radius, 6px);
 }
 
 button {
-  padding: 0.4rem 0.8rem;
+  padding: calc(0.4rem * var(--spacing-scale, 1)) calc(0.8rem * var(--spacing-scale, 1));
   border: none;
-  border-radius: 3px;
+  border-radius: var(--radius, 6px);
   background-color: var(--color-button-bg);
   color: var(--color-button-text);
   cursor: pointer;

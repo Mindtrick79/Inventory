@@ -1063,6 +1063,11 @@ def create_app():
             current["theme_button_hover_bg"] = form.get("theme_button_hover_bg", current.get("theme_button_hover_bg", "#173958"))
             current["theme_button_text"] = form.get("theme_button_text", current.get("theme_button_text", "#ffffff"))
             current["theme_font_family"] = form.get("theme_font_family", current.get("theme_font_family", "Arial, sans-serif"))
+            current["theme_google_font_url"] = form.get("theme_google_font_url", current.get("theme_google_font_url", ""))
+            current["theme_radius"] = form.get("theme_radius", current.get("theme_radius", "6px"))
+            current["theme_border_width"] = form.get("theme_border_width", current.get("theme_border_width", "1px"))
+            current["theme_spacing"] = form.get("theme_spacing", current.get("theme_spacing", "1"))
+            current["theme_header_height"] = form.get("theme_header_height", current.get("theme_header_height", ""))
 
             save_settings(current)
             app.config["APP_SETTINGS"] = current

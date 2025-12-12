@@ -48,6 +48,11 @@ def load_settings() -> Dict[str, Any]:
         "theme_button_hover_bg": "#173958",
         "theme_button_text": "#ffffff",
         "theme_font_family": "Arial, sans-serif",
+        "theme_google_font_url": "",
+        "theme_radius": "6px",
+        "theme_border_width": "1px",
+        "theme_spacing": "1",
+        "theme_header_height": "",
         # Email transport configuration; if left blank, falls back to config.py
         "smtp_provider": "bluehost",  # for future presets
         "smtp_host": "",

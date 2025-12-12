@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Roberts Inventory Manager</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% if settings is defined and settings.theme_google_font_url %}
+    <link rel="stylesheet" href="{{ settings.theme_google_font_url }}">
+    {% endif %}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% if settings is defined %}
     <style>
@@ -23,6 +26,10 @@
         --color-button-hover-bg: {{ settings.theme_button_hover_bg or '#173958' }};
         --color-button-text: {{ settings.theme_button_text or '#ffffff' }};
         --font-base: {{ settings.theme_font_family or '"Arial, sans-serif"' }};
+        --radius: {{ settings.theme_radius or '6px' }};
+        --border-width: {{ settings.theme_border_width or '1px' }};
+        --spacing-scale: {{ settings.theme_spacing or '1' }};
+        --header-height: {{ settings.theme_header_height or '' }};
       }
     </style>
     {% endif %}
