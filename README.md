@@ -53,6 +53,63 @@ export FLASK_ENV=production
 flask run --host 0.0.0.0 --port 8000
 ```
 
+## HTTPS (required for camera on laptops/phones)
+
+Modern browsers only allow webcam access (`getUserMedia`) on **secure contexts**:
+
+- `https://...` (recommended)
+- `http://localhost...`
+
+If you access the app over the LAN using **plain HTTP** like `http://<PI_IP>:8000`, the browser will typically block camera access on Windows/Android/iOS.
+
+### Recommended: Caddy reverse proxy with internal TLS (Raspberry Pi OS)
+
+This keeps Flask running locally and serves the site over HTTPS on port 443.
+
+1) Install Caddy:
+
+```bash
+sudo apt update
+sudo apt install -y caddy
+```
+
+2) Run Flask locally (recommended):
+
+- Run your app on `127.0.0.1:8000` (or whichever port you use).
+
+3) Configure Caddy:
+
+```bash
+sudo nano /etc/caddy/Caddyfile
+```
+
+Use this (replace `127.0.0.1:8000` if needed):
+
+```caddy
+https://<PI_IP> {
+  tls internal
+  reverse_proxy 127.0.0.1:8000
+}
+```
+
+Then restart Caddy:
+
+```bash
+sudo systemctl restart caddy
+sudo systemctl status caddy --no-pager
+```
+
+Open the app at:
+
+- `https://<PI_IP>/`
+
+### Device trust note
+
+`tls internal` uses a private (self-signed) CA. Devices may show a certificate warning until trusted.
+
+- For quick testing you can proceed through the warning.
+- For a clean “no warning” experience, install/trust the Caddy local CA on each device.
+
 ## Excel expectations
 
 Workbook sheets used:
