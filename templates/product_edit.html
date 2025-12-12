@@ -201,6 +201,36 @@
       statusEl.textContent = msg || '';
     }
 
+    function setStatusWithHttpsHint(msg) {
+      if (!statusEl) return;
+
+      // Only offer an https:// link when the page is currently http:// and not localhost.
+      var host = (window.location && window.location.hostname) ? window.location.hostname : '';
+      var isLocal = (host === 'localhost' || host === '127.0.0.1');
+      var isHttp = (window.location && window.location.protocol === 'http:');
+
+      statusEl.textContent = '';
+
+      var wrap = document.createElement('div');
+      wrap.appendChild(document.createTextNode(msg || ''));
+
+      if (isHttp && !isLocal) {
+        var httpsUrl = window.location.href.replace(/^http:/i, 'https:');
+        var sep = document.createElement('span');
+        sep.appendChild(document.createTextNode(' '));
+        wrap.appendChild(sep);
+
+        var link = document.createElement('a');
+        link.href = httpsUrl;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'Open HTTPS version';
+        wrap.appendChild(link);
+      }
+
+      statusEl.appendChild(wrap);
+    }
+
     function clearImage() {
       try {
         input.value = '';
@@ -253,7 +283,7 @@
 
     openBtn.addEventListener('click', async function() {
       if (window.isSecureContext === false) {
-        setStatus('Camera requires HTTPS (or localhost). Open this site via https:// or use the file picker to upload.');
+        setStatusWithHttpsHint('Camera requires HTTPS (or localhost).');
         input.click();
         return;
       }
